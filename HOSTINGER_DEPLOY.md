@@ -35,3 +35,24 @@ If you refresh a page like `/scanner` and get a 404 error, you need to tell Host
   RewriteRule . /index.html [L]
 </IfModule>
 ```
+
+## Option 2: Automated Git Deployment (Recommended)
+
+If you want to just `git push` and have it update your site automatically, use **GitHub Actions**.
+
+1.  **Get FTP Details from Hostinger**:
+    *   Go to **Dashboard** > **Files** > **FTP Accounts**.
+    *   Note your **FTP IP (Hostname)**, **Username**, and **Password**.
+
+2.  **Add Secrets to GitHub**:
+    *   Go to your Repo on GitHub.
+    *   **Settings** > **Secrets and variables** > **Actions**.
+    *   Click **New repository secret**. Add these three:
+        *   `FTP_SERVER`: (Your Hostinger IP, e.g., `185.x.x.x`)
+        *   `FTP_USERNAME`: (Your FTP Username)
+        *   `FTP_PASSWORD`: (Your FTP Password)
+
+3.  **Push the Code**:
+    *   I have already created the special file `.github/workflows/deploy.yml`.
+    *   Just push your code to GitHub.
+    *   Go to the **Actions** tab in GitHub to watch it build and deploy!
