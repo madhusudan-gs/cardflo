@@ -97,9 +97,9 @@ export default function CardfloApp() {
                 // Re-fetch stats
                 getStats(session.user.id).then(setStats);
             }, 2000);
-        } catch (error) {
-            console.error(error);
-            alert("Failed to save card. Please try again.");
+        } catch (error: any) {
+            console.error('Save error details:', error);
+            alert(`Failed to save card: ${error.message || "Unknown Database Error"}`);
             setStatus("REVIEWING");
         }
     };

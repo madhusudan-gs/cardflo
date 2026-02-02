@@ -27,8 +27,8 @@ export async function saveCard(card: CardData, userId: string): Promise<boolean>
 
         return true
     } catch (error) {
-        console.error('Error saving card:', error)
-        return false
+        console.error('Error in saveCard:', error);
+        throw error; // Rethrow to let the UI catch it
     }
 }
 export async function getStats(userId: string): Promise<{ today: number, total: number }> {
