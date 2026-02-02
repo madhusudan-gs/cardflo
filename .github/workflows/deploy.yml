@@ -21,6 +21,7 @@ jobs:
         run: |
           npm ci
           npm run build
+          cp public/.htaccess out/ || true
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
@@ -34,3 +35,4 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./out/
           server-dir: ./public_html/
+          dangerous-clean-slate: true
