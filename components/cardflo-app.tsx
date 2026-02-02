@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { AppStatus, CardData } from "@/lib/types";
 import { extractCardData } from "@/lib/gemini";
-import { saveCard } from "@/lib/supabase-service";
+import { saveCard, getStats, saveDraft, deleteDraft } from "@/lib/supabase-service";
 import { AuthScreen } from "@/components/auth-screen";
 import { ScannerScreen } from "@/components/scanner-screen";
 import { ReviewScreen } from "@/components/review-screen";
@@ -17,6 +17,8 @@ export default function CardfloApp() {
     const [session, setSession] = useState<Session | null>(null);
     const [currentCard, setCurrentCard] = useState<CardData | null>(null);
     const [processedImage, setProcessedImage] = useState<string | null>(null);
+    const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
+    const [stats, setStats] = useState<{ today: number, total: number }>({ today: 0, total: 0 });
 
     useEffect(() => {
         // Check active session
@@ -35,24 +37,42 @@ export default function CardfloApp() {
         return () => subscription.unsubscribe();
     }, []);
 
+    // Fetch stats whenever we return to IDLE
+    useEffect(() => {
+        if (status === "IDLE" && session?.user.id) {
+            getStats(session.user.id).then(setStats);
+        }
+    }, [status, session]);
+
     const handleCapture = async (imageBase64: string) => {
         const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
         if (!apiKey) {
+            console.error("CardfloApp: Missing NEXT_PUBLIC_GEMINI_API_KEY");
             alert("Missing Gemini API Key in Environment");
             return;
         }
 
+        console.log("CardfloApp: Starting extraction for captured image...");
         setStatus("EXTRACTING");
         setProcessedImage(imageBase64);
 
         try {
+            console.log("CardfloApp: Sending to Gemini...");
             const data = await extractCardData(imageBase64, apiKey);
+            console.log("CardfloApp: Extraction successful", data);
+
+            // Save as draft immediately for persistence/confirmation step
+            if (session?.user.id) {
+                const draftId = await saveDraft(data, session.user.id);
+                setCurrentDraftId(draftId);
+            }
+
             setCurrentCard(data);
             setStatus("REVIEWING");
-        } catch (error) {
-            console.error(error);
-            alert("Failed to extract data. Please try again.");
-            setStatus("SCANNING");
+        } catch (err: any) {
+            console.error("CardfloApp: Extraction error", err);
+            setStatus("IDLE");
+            alert(`Extraction Error: ${err.message || "The AI could not read the card reliably."}`);
         }
     };
 
@@ -64,15 +84,34 @@ export default function CardfloApp() {
             if (!success) throw new Error("Save failed");
 
             setStatus("SUCCESS");
+            // Cleanup draft
+            if (currentDraftId) {
+                await deleteDraft(currentDraftId);
+                setCurrentDraftId(null);
+            }
+
             setTimeout(() => {
                 setStatus("IDLE");
                 setCurrentCard(null);
+                setProcessedImage(null);
+                // Re-fetch stats
+                getStats(session.user.id).then(setStats);
             }, 2000);
         } catch (error) {
             console.error(error);
-            alert("Failed to save card.");
+            alert("Failed to save card. Please try again.");
             setStatus("REVIEWING");
         }
+    };
+
+    const handleDiscard = async () => {
+        if (currentDraftId) {
+            await deleteDraft(currentDraftId);
+            setCurrentDraftId(null);
+        }
+        setCurrentCard(null);
+        setProcessedImage(null);
+        setStatus("IDLE");
     };
 
     const handleSignOut = async () => {
@@ -93,15 +132,18 @@ export default function CardfloApp() {
         );
     }
 
+
     if (status === "EXTRACTING") {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 px-4 text-center space-y-4">
-                <div className="relative">
-                    <div className="absolute inset-0 bg-emerald-500/20 blur-xl rounded-full" />
-                    <Loader2 className="w-12 h-12 text-emerald-400 animate-spin relative z-10" />
+            <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center space-y-8 animate-in fade-in duration-500">
+                <div className="relative w-32 h-32 mx-auto">
+                    <div className="absolute inset-0 border-[6px] border-emerald-500/10 rounded-full"></div>
+                    <div className="absolute inset-0 border-[6px] border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
-                <h2 className="text-xl font-medium text-white">Analyzing Card...</h2>
-                <p className="text-slate-400">Gemini is reading the text pixels.</p>
+                <div className="space-y-2">
+                    <h3 className="text-4xl font-black text-white tracking-tight">AI OCR Formulation...</h3>
+                    <p className="text-slate-400 font-bold uppercase tracking-tighter text-xs">Transforming pixels to data strings</p>
+                </div>
             </div>
         );
     }
@@ -109,9 +151,10 @@ export default function CardfloApp() {
     if (status === "REVIEWING" && currentCard) {
         return (
             <ReviewScreen
-                initialData={currentCard}
+                data={currentCard}
+                image={processedImage || ""}
                 onSave={handleSave}
-                onDiscard={() => setStatus("IDLE")}
+                onCancel={handleDiscard}
             />
         );
     }
@@ -170,11 +213,11 @@ export default function CardfloApp() {
 
                 <div className="grid grid-cols-2 gap-4 w-full max-w-sm mt-8">
                     <div className="glass-panel p-4 rounded-xl text-center">
-                        <div className="text-2xl font-bold text-white">0</div>
+                        <div className="text-2xl font-bold text-white">{stats.today}</div>
                         <div className="text-xs text-slate-500 uppercase tracking-wider mt-1">Today</div>
                     </div>
                     <div className="glass-panel p-4 rounded-xl text-center">
-                        <div className="text-2xl font-bold text-white">0</div>
+                        <div className="text-2xl font-bold text-white">{stats.total}</div>
                         <div className="text-xs text-slate-500 uppercase tracking-wider mt-1">Total</div>
                     </div>
                 </div>

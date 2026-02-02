@@ -1,6 +1,7 @@
 import { useRef, useCallback, useState, useEffect } from "react";
 import { Button } from "@/components/ui/shared";
-import { Camera, RefreshCw, Loader2 } from "lucide-react";
+import { Camera, RefreshCw, Loader2, Sparkles } from "lucide-react";
+import { detectSteadyCard } from "@/lib/gemini";
 
 interface ScannerScreenProps {
     onCapture: (imageBase64: string) => void;
@@ -10,12 +11,25 @@ interface ScannerScreenProps {
 export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const lastFrameRef = useRef<ImageData | null>(null);
-    const stabilityCountRef = useRef(0);
+    const detectionCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
     const [stream, setStream] = useState<MediaStream | null>(null);
-    const [isAutoCapturing, setIsAutoCapturing] = useState(false);
-    const [progress, setProgress] = useState(0);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [status, setStatus] = useState<"IDLE" | "DETECTING" | "STEADY" | "CAPTURING">("IDLE");
+
+    // Refs for loop state to avoid closure staleness (matches prototype logic)
+    const statusRef = useRef(status);
+    const isProcessingRef = useRef(isProcessing);
+
+    useEffect(() => { statusRef.current = status; }, [status]);
+    useEffect(() => { isProcessingRef.current = isProcessing; }, [isProcessing]);
+
+    // Initialize detection canvas
+    useEffect(() => {
+        detectionCanvasRef.current = document.createElement('canvas');
+        detectionCanvasRef.current.width = 480;
+        detectionCanvasRef.current.height = 480;
+    }, []);
 
     useEffect(() => {
         let currentStream: MediaStream | null = null;
@@ -49,67 +63,86 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
         };
     }, []);
 
-    const capture = useCallback(() => {
+    const captureFullRes = useCallback(() => {
         if (videoRef.current && canvasRef.current) {
             const video = videoRef.current;
             const canvas = canvasRef.current;
-
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-
             const context = canvas.getContext("2d");
             if (context) {
                 context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                const imageBase64 = canvas.toDataURL("image/jpeg", 0.95); // High quality
+                // Prototype Logic: EXTRACTION_QUALITY: 0.95
+                const imageBase64 = canvas.toDataURL("image/jpeg", 0.95);
                 onCapture(imageBase64);
             }
         }
     }, [onCapture]);
 
-    // Auto-capture logic
+    // AI Search Loop (1500ms) - Increased frequency for "smoothness"
     useEffect(() => {
-        const interval = setInterval(() => {
-            if (!videoRef.current || !canvasRef.current || isAutoCapturing) return;
+        const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+        if (!apiKey) {
+            console.error("Scanner: Missing NEXT_PUBLIC_GEMINI_API_KEY");
+            return;
+        }
+
+        console.log("Scanner: Starting AI Search Loop");
+
+        const interval = setInterval(async () => {
+            // Check refs and isProcessing status
+            if (!videoRef.current || !detectionCanvasRef.current) return;
+            if (statusRef.current === "CAPTURING" || statusRef.current === "STEADY") return;
+            if (isProcessingRef.current) return;
 
             const video = videoRef.current;
-            if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+            // Robust Capture: Check readyState === 4 (HAVE_ENOUGH_DATA)
+            if (video.readyState !== 4) return;
 
-            // Use a small hidden canvas for stability check
-            const checkCanvas = document.createElement('canvas');
-            checkCanvas.width = 100;
-            checkCanvas.height = 100;
-            const ctx = checkCanvas.getContext('2d');
+            const ctx = detectionCanvasRef.current.getContext('2d', { willReadFrequently: true });
             if (!ctx) return;
 
-            // Draw center portion
-            ctx.drawImage(video, video.videoWidth / 4, video.videoHeight / 4, video.videoWidth / 2, video.videoHeight / 2, 0, 0, 100, 100);
-            const currentFrame = ctx.getImageData(0, 0, 100, 100);
+            // Detection Stage: Prototype uses 0.5x scale
+            setIsProcessing(true);
 
-            if (lastFrameRef.current) {
-                let diff = 0;
-                for (let i = 0; i < currentFrame.data.length; i += 4) {
-                    diff += Math.abs(currentFrame.data[i] - lastFrameRef.current.data[i]);
-                }
+            try {
+                const vW = video.videoWidth;
+                const vH = video.videoHeight;
+                if (vW === 0 || vH === 0) return;
 
-                const threshold = 150000; // Adjust based on testing
-                if (diff < threshold) {
-                    stabilityCountRef.current += 1;
-                    setProgress(Math.min((stabilityCountRef.current / 4) * 100, 100)); // ~2 seconds stability
+                // Prototype Logic: PREVIEW_SCALE: 0.5
+                detectionCanvasRef.current.width = vW * 0.5;
+                detectionCanvasRef.current.height = vH * 0.5;
 
-                    if (stabilityCountRef.current >= 4) {
-                        setIsAutoCapturing(true);
-                        capture();
-                    }
+                ctx.drawImage(video, 0, 0, detectionCanvasRef.current.width, detectionCanvasRef.current.height);
+                const detectionImage = detectionCanvasRef.current.toDataURL("image/jpeg", 0.5);
+
+                console.log("Scanner: AI checking frame...");
+                const { is_steady, card_present } = await detectSteadyCard(detectionImage, apiKey);
+
+                if (card_present && is_steady) {
+                    console.log("Scanner: Steady state reached! Capturing HD...");
+                    setStatus("STEADY");
+                    clearInterval(interval);
+                    setStatus("CAPTURING");
+                    captureFullRes();
+                } else if (!card_present) {
+                    setStatus("IDLE");
                 } else {
-                    stabilityCountRef.current = 0;
-                    setProgress(0);
+                    setStatus("DETECTING");
                 }
+            } catch (err) {
+                console.error("Scanner: Detection loop error:", err);
+            } finally {
+                setIsProcessing(false);
             }
-            lastFrameRef.current = currentFrame;
-        }, 500);
+        }, 2000); // Prototype Timing: 2000ms
 
-        return () => clearInterval(interval);
-    }, [capture, isAutoCapturing]);
+        return () => {
+            console.log("Scanner: Clearing AI Search Loop");
+            clearInterval(interval);
+        };
+    }, [captureFullRes]);
 
     return (
         <div className="fixed inset-0 bg-black flex flex-col z-50">
@@ -124,25 +157,37 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
 
                 {/* Overlay Guide */}
                 <div className="absolute inset-0 border-[40px] border-black/50 pointer-events-none flex items-center justify-center">
-                    <div className="w-full h-64 border-2 border-emerald-500/30 rounded-lg relative">
-                        <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-emerald-400"></div>
-                        <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-emerald-400"></div>
-                        <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-emerald-400"></div>
-                        <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-emerald-400"></div>
+                    <div className={`w-full h-64 border-2 rounded-lg relative transition-colors duration-500 ${status === "STEADY" || status === "CAPTURING" ? "border-emerald-400" :
+                        status === "DETECTING" ? "border-cyan-400" : "border-white/20"
+                        }`}>
+                        <div className={`absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 transition-colors ${status === "STEADY" || status === "CAPTURING" ? "border-emerald-400" : "border-cyan-400"
+                            }`}></div>
+                        <div className={`absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 transition-colors ${status === "STEADY" || status === "CAPTURING" ? "border-emerald-400" : "border-cyan-400"
+                            }`}></div>
+                        <div className={`absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 transition-colors ${status === "STEADY" || status === "CAPTURING" ? "border-emerald-400" : "border-cyan-400"
+                            }`}></div>
+                        <div className={`absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 transition-colors ${status === "STEADY" || status === "CAPTURING" ? "border-emerald-400" : "border-cyan-400"
+                            }`}></div>
 
-                        <div className="absolute inset-0 flex flex-col items-center justify-center space-y-2">
-                            <p className="text-emerald-400 text-xs font-medium tracking-widest uppercase bg-black/40 px-3 py-1 rounded-full backdrop-blur-sm">
-                                {progress > 0 ? "Hold Still..." : "Position Card"}
-                            </p>
-                            {progress > 0 && (
-                                <div className="w-32 h-1 bg-white/10 rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full bg-emerald-500 transition-all duration-300"
-                                        style={{ width: `${progress}%` }}
-                                    />
+                        <div className="absolute inset-0 flex flex-col items-center justify-center space-y-3">
+                            {isProcessing && (
+                                <div className="absolute top-8 left-8 right-8 flex items-center justify-center animate-in fade-in duration-300">
+                                    <div className="flex items-center gap-2 bg-emerald-500/20 px-6 py-2 rounded-full border border-emerald-500/30 backdrop-blur-md">
+                                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                                        <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Sensing card... hold steady</span>
+                                    </div>
+                                </div>
+                            )}
+                            {(status === "STEADY" || status === "CAPTURING") && (
+                                <div className="flex items-center gap-2 bg-emerald-500/20 px-4 py-2 rounded-full backdrop-blur-md border border-emerald-500/30">
+                                    <div className="w-2 h-2 bg-emerald-400 rounded-full animate-ping" />
+                                    <span className="text-emerald-400 text-xs font-bold tracking-widest uppercase">Steady!</span>
                                 </div>
                             )}
                         </div>
+
+                        {/* Scanning Laser Line */}
+                        <div className={`absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent transition-opacity duration-300 ${isProcessing ? "opacity-100 scan-laser" : "opacity-0"}`} />
                     </div>
                 </div>
             </div>
@@ -153,45 +198,39 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
                 </Button>
 
                 <div className="relative flex items-center justify-center">
-                    {/* Progress Ring */}
-                    <svg className="w-24 h-24 absolute -rotate-90 pointer-events-none">
-                        <circle
-                            cx="48"
-                            cy="48"
-                            r="42"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                            fill="transparent"
-                            className="text-white/10"
-                        />
-                        <circle
-                            cx="48"
-                            cy="48"
-                            r="42"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                            fill="transparent"
-                            strokeDasharray={264}
-                            strokeDashoffset={264 - (progress / 100) * 264}
-                            className="text-emerald-500 transition-all duration-300"
-                        />
-                    </svg>
                     <button
-                        onClick={capture}
-                        disabled={isAutoCapturing}
+                        onClick={captureFullRes}
+                        disabled={status === "CAPTURING"}
                         className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center relative group z-10"
                     >
-                        <div className="w-16 h-16 bg-white rounded-full transition-transform group-active:scale-90" />
-                        {isAutoCapturing && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-full">
-                                <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+                        <div className={`w-16 h-16 rounded-full transition-all ${status === "CAPTURING" ? "bg-emerald-500 scale-90" : "bg-white group-active:scale-95"
+                            }`} />
+                        {status === "CAPTURING" && (
+                            <div className="absolute inset-0 flex items-center justify-center rounded-full">
+                                <Loader2 className="w-8 h-8 text-white animate-spin" />
                             </div>
                         )}
                     </button>
+
+                    <div className="absolute -bottom-6 text-[10px] text-slate-500 uppercase tracking-tighter">
+                        {status === "CAPTURING" ? "Capturing HD..." : "Autocapture Active"}
+                    </div>
                 </div>
 
                 <div className="w-20" /> {/* Spacer */}
             </div>
+
+            <style jsx>{`
+                .scan-laser {
+                    animation: scan 2s linear infinite;
+                    position: absolute;
+                    width: 100%;
+                }
+                @keyframes scan {
+                    0% { top: 0; }
+                    100% { top: 100%; }
+                }
+            `}</style>
         </div>
     );
 }
