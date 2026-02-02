@@ -13,6 +13,7 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const detectionCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
+    const streamRef = useRef<MediaStream | null>(null);
     const [stream, setStream] = useState<MediaStream | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [status, setStatus] = useState<"IDLE" | "DETECTING" | "STEADY" | "CAPTURING">("IDLE");
@@ -24,6 +25,15 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
     useEffect(() => { statusRef.current = status; }, [status]);
     useEffect(() => { isProcessingRef.current = isProcessing; }, [isProcessing]);
 
+    const stopCamera = useCallback(() => {
+        if (streamRef.current) {
+            console.log("Scanner: Stopping camera tracks");
+            streamRef.current.getTracks().forEach((track) => track.stop());
+            streamRef.current = null;
+            setStream(null);
+        }
+    }, []);
+
     // Initialize detection canvas
     useEffect(() => {
         detectionCanvasRef.current = document.createElement('canvas');
@@ -31,37 +41,51 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
         detectionCanvasRef.current.height = 480;
     }, []);
 
-    useEffect(() => {
-        let currentStream: MediaStream | null = null;
+    const startCamera = useCallback(async () => {
+        if (streamRef.current) return;
+        try {
+            console.log("Scanner: Requesting camera access");
+            const mediaStream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: "environment",
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
+                },
+            });
+            streamRef.current = mediaStream;
+            setStream(mediaStream);
+            if (videoRef.current) {
+                videoRef.current.srcObject = mediaStream;
+            }
+        } catch (err) {
+            console.error("Error accessing camera:", err);
+            alert("Could not access camera. Please allow permissions.");
+        }
+    }, []);
 
-        const startCameraInstance = async () => {
-            try {
-                const mediaStream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        facingMode: "environment",
-                        width: { ideal: 1920 },
-                        height: { ideal: 1080 }
-                    },
-                });
-                currentStream = mediaStream;
-                setStream(mediaStream);
-                if (videoRef.current) {
-                    videoRef.current.srcObject = mediaStream;
-                }
-            } catch (err) {
-                console.error("Error accessing camera:", err);
-                alert("Could not access camera. Please allow permissions.");
+    useEffect(() => {
+        startCamera();
+
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                console.log("Scanner: Tab hidden, pausing camera");
+                stopCamera();
+            } else {
+                console.log("Scanner: Tab visible, restarting camera");
+                startCamera();
             }
         };
 
-        startCameraInstance();
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+        window.addEventListener("pagehide", stopCamera);
 
         return () => {
-            if (currentStream) {
-                currentStream.getTracks().forEach((track) => track.stop());
-            }
+            console.log("Scanner: Unmounting, cleaning up camera");
+            stopCamera();
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+            window.removeEventListener("pagehide", stopCamera);
         };
-    }, []);
+    }, [startCamera, stopCamera]);
 
     const captureFullRes = useCallback(() => {
         if (videoRef.current && canvasRef.current) {
