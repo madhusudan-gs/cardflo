@@ -1,17 +1,20 @@
 import { useState } from "react";
 import { Button, Input, Label, Textarea } from "@/components/ui/shared";
 import { CardData } from "@/lib/types";
-import { ArrowLeft, Save, Trash2, Check } from "lucide-react";
+import { ArrowLeft, Save, Trash2, Check, Sparkles } from "lucide-react";
 
 interface ReviewScreenProps {
     data: CardData;
-    image: string;
+    frontImage: string;
+    backImage: string;
     onSave: (data: CardData) => void;
     onCancel: () => void;
+    onScanBack: () => void;
 }
 
-export function ReviewScreen({ data: initialData, image, onSave, onCancel }: ReviewScreenProps) {
+export function ReviewScreen({ data: initialData, frontImage, backImage, onSave, onCancel, onScanBack }: ReviewScreenProps) {
     const [data, setData] = useState<CardData>(initialData);
+    const [viewingSide, setViewingSide] = useState<"front" | "back">("front");
 
     const handleChange = (field: keyof CardData, value: string) => {
         setData((prev) => ({ ...prev, [field]: value }));
@@ -38,12 +41,50 @@ export function ReviewScreen({ data: initialData, image, onSave, onCancel }: Rev
                 <div className="h-full flex flex-col lg:flex-row gap-0 lg:gap-8 p-4 lg:p-8 overflow-y-auto lg:overflow-hidden">
                     {/* Left: Card Preview */}
                     <div className="w-full lg:w-1/2 flex flex-col space-y-4 mb-8 lg:mb-0">
-                        <div className="relative aspect-[3/2] rounded-[2.5rem] overflow-hidden border border-slate-700 bg-slate-900 shadow-3xl ring-1 ring-white/5">
-                            {image && <img src={image} alt="Captured Card" className="w-full h-full object-cover" />}
+                        <div className="relative aspect-[3/2] rounded-[2.5rem] overflow-hidden border border-slate-700 bg-slate-900 shadow-3xl ring-1 ring-white/5 group">
+                            <img
+                                src={viewingSide === "front" ? frontImage : (backImage || frontImage)}
+                                alt="Captured Card"
+                                className="w-full h-full object-cover transition-all duration-500"
+                            />
+
+                            {/* Side Toggle Overlay */}
+                            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex space-x-2 bg-slate-950/60 backdrop-blur-xl p-1.5 rounded-2xl border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                <button
+                                    onClick={() => setViewingSide("front")}
+                                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewingSide === "front" ? "bg-emerald-500 text-white" : "text-slate-400 hover:text-white"}`}
+                                >
+                                    Front
+                                </button>
+                                <button
+                                    onClick={() => backImage ? setViewingSide("back") : null}
+                                    disabled={!backImage}
+                                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewingSide === "back" ? "bg-emerald-500 text-white" : "text-slate-400 hover:text-white"} ${!backImage && "opacity-30 cursor-not-allowed"}`}
+                                >
+                                    {backImage ? "Back" : "Back (Empty)"}
+                                </button>
+                            </div>
                         </div>
-                        <div className="hidden lg:block bg-blue-500/10 border border-blue-500/20 p-6 rounded-3xl">
-                            <p className="text-blue-400 text-xs font-bold leading-relaxed italic">
-                                "The AI has parsed the card details. Please verify the fields on the right before sinking to your leads list."
+
+                        {!backImage ? (
+                            <Button
+                                variant="outline"
+                                onClick={onScanBack}
+                                className="w-full h-14 border-slate-700 text-slate-300 hover:text-emerald-400 hover:border-emerald-500/50 rounded-2xl border-dashed bg-slate-900/40 flex items-center justify-center gap-2 group transition-all"
+                            >
+                                <Sparkles className="w-4 h-4 text-emerald-500 group-hover:animate-pulse" />
+                                <span className="text-xs font-bold uppercase tracking-wider">Scan Back Side (Optional)</span>
+                            </Button>
+                        ) : (
+                            <div className="flex items-center justify-center gap-2 bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl">
+                                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Both Sides Captured</span>
+                            </div>
+                        )}
+
+                        <div className="hidden lg:block bg-slate-900/60 border border-slate-800 p-6 rounded-3xl">
+                            <p className="text-slate-400 text-xs font-medium leading-relaxed italic opacity-70">
+                                "The AI has parsed the card details from the front. Capturing the back provides extra context like social links or multiple offices."
                             </p>
                         </div>
                     </div>

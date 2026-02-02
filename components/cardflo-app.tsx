@@ -17,7 +17,8 @@ export default function CardfloApp() {
     const [status, setStatus] = useState<AppStatus>("AUTHENTICATING");
     const [session, setSession] = useState<Session | null>(null);
     const [currentCard, setCurrentCard] = useState<CardData | null>(null);
-    const [processedImage, setProcessedImage] = useState<string | null>(null);
+    const [frontImage, setFrontImage] = useState<string | null>(null);
+    const [backImage, setBackImage] = useState<string | null>(null);
     const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
     const [stats, setStats] = useState<{ today: number, total: number }>({ today: 0, total: 0 });
 
@@ -55,7 +56,15 @@ export default function CardfloApp() {
 
         console.log("CardfloApp: Starting extraction for captured image...");
         setStatus("EXTRACTING");
-        setProcessedImage(imageBase64);
+
+        // If we are already reviewing a card, this must be the back side
+        if (currentCard) {
+            setBackImage(imageBase64);
+            setStatus("REVIEWING");
+            return;
+        }
+
+        setFrontImage(imageBase64);
 
         try {
             console.log("CardfloApp: Sending to Gemini...");
@@ -81,7 +90,13 @@ export default function CardfloApp() {
         if (!session?.user) return;
         setStatus("SAVING");
         try {
-            const success = await saveCard(data, session.user.id);
+            const finalData = {
+                ...data,
+                imageUrl: frontImage || undefined,
+                backImage: backImage || undefined,
+                scannedAt: new Date().toISOString()
+            };
+            const success = await saveCard(finalData, session.user.id);
             if (!success) throw new Error("Save failed");
 
             setStatus("SUCCESS");
@@ -94,7 +109,8 @@ export default function CardfloApp() {
             setTimeout(() => {
                 setStatus("IDLE");
                 setCurrentCard(null);
-                setProcessedImage(null);
+                setFrontImage(null);
+                setBackImage(null);
                 // Re-fetch stats
                 getStats(session.user.id).then(setStats);
             }, 2000);
@@ -111,7 +127,8 @@ export default function CardfloApp() {
             setCurrentDraftId(null);
         }
         setCurrentCard(null);
-        setProcessedImage(null);
+        setFrontImage(null);
+        setBackImage(null);
         setStatus("IDLE");
     };
 
@@ -157,9 +174,11 @@ export default function CardfloApp() {
         return (
             <ReviewScreen
                 data={currentCard}
-                image={processedImage || ""}
+                frontImage={frontImage || ""}
+                backImage={backImage || ""}
                 onSave={handleSave}
                 onCancel={handleDiscard}
+                onScanBack={() => setStatus("SCANNING")}
             />
         );
     }

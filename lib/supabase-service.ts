@@ -17,7 +17,9 @@ export async function saveCard(card: CardData, userId: string): Promise<boolean>
                 website: card.website,
                 address: card.address,
                 notes: card.notes,
-                // team_id: ... // Future: Add team logic here
+                image_url: card.imageUrl,
+                back_image_url: card.backImage,
+                scanned_at: card.scannedAt || new Date().toISOString(),
             } as any)
 
         if (error) {
@@ -77,6 +79,8 @@ export async function saveDraft(card: CardData, userId: string): Promise<string 
                 website: card.website,
                 address: card.address,
                 notes: card.notes,
+                back_image_url: card.backImage,
+                scanned_at: card.scannedAt || new Date().toISOString(),
             } as any)
             .select('id')
             .single();

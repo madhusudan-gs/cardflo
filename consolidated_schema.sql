@@ -18,7 +18,9 @@ create table if not exists public.leads (
   website text,
   address text,
   notes text,
-  image_url text
+  image_url text,
+  back_image_url text,
+  scanned_at timestamp with time zone default timezone('utc'::text, now())
 );
 
 -- 3. DRAFTS TABLE (Temporary storage)
@@ -36,7 +38,9 @@ create table if not exists public.drafts (
   website text,
   address text,
   notes text,
-  image_url text
+  image_url text,
+  back_image_url text,
+  scanned_at timestamp with time zone default timezone('utc'::text, now())
 );
 
 -- 4. Enable Row Level Security

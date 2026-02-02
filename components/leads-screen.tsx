@@ -17,6 +17,7 @@ interface Lead {
     address: string;
     notes: string;
     created_at: string;
+    scanned_at: string;
 }
 
 export function LeadsScreen({ onBack }: { onBack: () => void }) {
@@ -123,6 +124,10 @@ export function LeadsScreen({ onBack }: { onBack: () => void }) {
                                         <Trash2 className="w-4 h-4" />
                                     </Button>
                                 </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                <span>Scanned on {new Date(lead.scanned_at || lead.created_at).toLocaleDateString()}</span>
                             </div>
 
                             <div className="grid grid-cols-1 gap-2 border-t border-slate-800/50 pt-4">

@@ -19,5 +19,8 @@ export interface CardData {
     website: string;
     address: string;
     notes: string;
+    backImage?: string;
+    imageUrl?: string;
+    scannedAt?: string;
 }
 

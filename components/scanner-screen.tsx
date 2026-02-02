@@ -161,7 +161,7 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
             } finally {
                 setIsProcessing(false);
             }
-        }, 2000); // Prototype Timing: 2000ms
+        }, 1500); // Increased to 1500ms for stability against 429 errors
 
         return () => {
             console.log("Scanner: Clearing AI Search Loop");
