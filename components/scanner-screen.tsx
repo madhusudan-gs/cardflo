@@ -139,7 +139,8 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
                 detectionCanvasRef.current.height = vH * 0.5;
 
                 ctx.drawImage(video, 0, 0, detectionCanvasRef.current.width, detectionCanvasRef.current.height);
-                const detectionImage = detectionCanvasRef.current.toDataURL("image/jpeg", 0.5);
+                // Lower quality to 0.3 for faster transit
+                const detectionImage = detectionCanvasRef.current.toDataURL("image/jpeg", 0.3);
 
                 console.log("Scanner: AI checking frame...");
                 const { is_steady, card_present } = await detectSteadyCard(detectionImage, apiKey);

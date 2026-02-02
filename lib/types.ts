@@ -6,7 +6,8 @@ export type AppStatus =
     | "REVIEWING"
     | "DUPLICATE_FOUND"
     | "SAVING"
-    | "SUCCESS";
+    | "SUCCESS"
+    | "LEADS";
 
 export interface CardData {
     firstName: string;

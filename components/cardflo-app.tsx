@@ -7,8 +7,9 @@ import { saveCard, getStats, saveDraft, deleteDraft } from "@/lib/supabase-servi
 import { AuthScreen } from "@/components/auth-screen";
 import { ScannerScreen } from "@/components/scanner-screen";
 import { ReviewScreen } from "@/components/review-screen";
+import { LeadsScreen } from "@/components/leads-screen";
 import { Button } from "@/components/ui/shared";
-import { Loader2, Zap, LogOut } from "lucide-react";
+import { Loader2, Zap, LogOut, Database } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
 
@@ -148,6 +149,10 @@ export default function CardfloApp() {
         );
     }
 
+    if (status === "LEADS") {
+        return <LeadsScreen onBack={() => setStatus("IDLE")} />;
+    }
+
     if (status === "REVIEWING" && currentCard) {
         return (
             <ReviewScreen
@@ -210,6 +215,15 @@ export default function CardfloApp() {
                         Scan Card
                     </Button>
                 </div>
+
+                <Button
+                    variant="ghost"
+                    className="text-slate-500 hover:text-emerald-400 transition-colors flex items-center space-x-2"
+                    onClick={() => setStatus("LEADS")}
+                >
+                    <Database className="w-4 h-4" />
+                    <span className="text-xs font-bold uppercase tracking-widest">View My Leads</span>
+                </Button>
 
                 <div className="grid grid-cols-2 gap-4 w-full max-w-sm mt-8">
                     <div className="glass-panel p-4 rounded-xl text-center">

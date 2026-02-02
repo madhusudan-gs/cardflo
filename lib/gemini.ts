@@ -19,10 +19,8 @@ export async function detectSteadyCard(
     // Using 2.0-flash for best stability and speed in this project environment
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
-    const prompt = `ANALYZE FRAME: Is there a physical business card in this image? 
-    It doesn't have to be perfectly still. Minor movement or slight motion blur is ACCEPTABLE as long as the text is mostly legible.
-    Return true for 'is_steady' if it's readable enough to try extraction.
-    Return a JSON object with: { "is_steady": boolean, "card_present": boolean }`;
+    const prompt = `Business card in frame?
+    Return JSON: { "is_steady": boolean (legible), "card_present": boolean }`;
 
     try {
         const result = await model.generateContent({
