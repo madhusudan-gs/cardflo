@@ -16,8 +16,8 @@ export async function detectSteadyCard(
     apiKey: string
 ): Promise<{ is_steady: boolean; card_present: boolean }> {
     const genAI = new GoogleGenerativeAI(apiKey);
-    // Using prototype's verified model ID
-    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+    // Using 2.0-flash for best stability and speed in this project environment
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     const prompt = `ANALYZE FRAME: Is there a physical business card in this image? 
     It doesn't have to be perfectly still. Minor movement or slight motion blur is ACCEPTABLE as long as the text is mostly legible.
@@ -57,7 +57,7 @@ export async function extractCardData(
 ): Promise<CardData> {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-        model: "gemini-3-flash-preview",
+        model: "gemini-2.0-flash",
         systemInstruction: SYSTEM_INSTRUCTION
     });
 
