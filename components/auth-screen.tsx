@@ -33,6 +33,24 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
         }
     }
 
+    const handleResend = async () => {
+        setIsLoading(true)
+        setError(null)
+        setMessage(null)
+        try {
+            const { error } = await supabase.auth.resend({
+                type: 'signup',
+                email: email,
+            })
+            if (error) throw error
+            setMessage("New confirmation link sent! Please check your inbox.")
+        } catch (err: any) {
+            setError(err.message)
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
     const handleAuth = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsLoading(true)
@@ -59,7 +77,8 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
                 })
                 if (error) {
                     if (error.message.includes("Email not confirmed")) {
-                        throw new Error("Please confirm your email before signing in. Check your inbox (and spam folder).")
+                        setError("Email not confirmed") // Explicitly set for specific UI handling
+                        return
                     }
                     throw error
                 }
@@ -115,8 +134,18 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
                 )}
 
                 {error && (
-                    <div className="text-red-400 text-sm bg-red-400/10 p-3 rounded border border-red-400/20">
-                        {error}
+                    <div className="text-red-400 text-sm bg-red-400/10 p-3 rounded border border-red-400/20 flex flex-col gap-2">
+                        <p>{error === "Email not confirmed" ? "Please confirm your email address before signing in." : error}</p>
+                        {error === "Email not confirmed" && (
+                            <button
+                                type="button"
+                                onClick={handleResend}
+                                className="text-emerald-400 hover:underline text-left font-medium"
+                                disabled={isLoading}
+                            >
+                                Resend confirmation link?
+                            </button>
+                        )}
                     </div>
                 )}
 
