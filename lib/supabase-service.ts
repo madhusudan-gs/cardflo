@@ -81,12 +81,12 @@ export async function saveDraft(card: CardData, userId: string): Promise<string 
             .select('id')
             .single();
 
-        if (error) {
+        if (error || !data) {
             console.error('Supabase draft error:', error);
             return null;
         }
 
-        return data.id;
+        return (data as any).id;
     } catch (error) {
         console.error('Error saving draft:', error);
         return null;
