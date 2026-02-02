@@ -33,17 +33,20 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
         }
     }
 
-    const handleResend = async () => {
+    const handleForgotPassword = async () => {
+        if (!email) {
+            setError("Please enter your email address first.")
+            return
+        }
         setIsLoading(true)
         setError(null)
         setMessage(null)
         try {
-            const { error } = await supabase.auth.resend({
-                type: 'signup',
-                email: email,
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/reset-password`,
             })
             if (error) throw error
-            setMessage("New confirmation link sent! Please check your inbox.")
+            setMessage("Password reset link sent! Check your inbox.")
         } catch (err: any) {
             setError(err.message)
         } finally {
@@ -65,24 +68,19 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
                 })
                 if (error) throw error
 
-                if (data.user && data.session === null) {
-                    setMessage("Check your email for a confirmation link!")
-                } else if (data.session) {
+                if (data.session) {
                     onAuthSuccess()
+                } else if (data.user) {
+                    // This happens if "Confirm Email" is still ON in Supabase
+                    setMessage("Check your email for a confirmation link!")
                 }
             } else {
-                const { error } = await supabase.auth.signInWithPassword({
+                const { error, data } = await supabase.auth.signInWithPassword({
                     email,
                     password,
                 })
-                if (error) {
-                    if (error.message.includes("Email not confirmed")) {
-                        setError("Email not confirmed") // Explicitly set for specific UI handling
-                        return
-                    }
-                    throw error
-                }
-                onAuthSuccess()
+                if (error) throw error
+                if (data.session) onAuthSuccess()
             }
         } catch (err: any) {
             setError(err.message)
@@ -116,7 +114,18 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <div className="flex items-center justify-between">
+                        <Label htmlFor="password">Password</Label>
+                        {!isSignUp && (
+                            <button
+                                type="button"
+                                onClick={handleForgotPassword}
+                                className="text-xs text-emerald-400 hover:underline"
+                            >
+                                Forgot Password?
+                            </button>
+                        )}
+                    </div>
                     <Input
                         id="password"
                         type="password"
@@ -134,18 +143,8 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
                 )}
 
                 {error && (
-                    <div className="text-red-400 text-sm bg-red-400/10 p-3 rounded border border-red-400/20 flex flex-col gap-2">
-                        <p>{error === "Email not confirmed" ? "Please confirm your email address before signing in." : error}</p>
-                        {error === "Email not confirmed" && (
-                            <button
-                                type="button"
-                                onClick={handleResend}
-                                className="text-emerald-400 hover:underline text-left font-medium"
-                                disabled={isLoading}
-                            >
-                                Resend confirmation link?
-                            </button>
-                        )}
+                    <div className="text-red-400 text-sm bg-red-400/10 p-3 rounded border border-red-400/20">
+                        {error}
                     </div>
                 )}
 
