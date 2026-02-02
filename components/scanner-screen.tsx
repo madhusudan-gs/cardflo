@@ -12,29 +12,33 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [stream, setStream] = useState<MediaStream | null>(null);
 
-    const startCamera = async () => {
-        try {
-            const mediaStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: "environment" }, // Prefer back camera
-            });
-            setStream(mediaStream);
-            if (videoRef.current) {
-                videoRef.current.srcObject = mediaStream;
-            }
-        } catch (err) {
-            console.error("Error accessing camera:", err);
-            alert("Could not access camera. Please allow permissions.");
-        }
-    };
-
     useEffect(() => {
-        startCamera();
-        return () => {
-            if (stream) {
-                stream.getTracks().forEach((track) => track.stop());
+        let currentStream: MediaStream | null = null;
+
+        const startCameraInstance = async () => {
+            try {
+                const mediaStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "environment" },
+                });
+                currentStream = mediaStream;
+                setStream(mediaStream);
+                if (videoRef.current) {
+                    videoRef.current.srcObject = mediaStream;
+                }
+            } catch (err) {
+                console.error("Error accessing camera:", err);
+                alert("Could not access camera. Please allow permissions.");
             }
         };
-    }, []); // Run once on mount
+
+        startCameraInstance();
+
+        return () => {
+            if (currentStream) {
+                currentStream.getTracks().forEach((track) => track.stop());
+            }
+        };
+    }, []);
 
     const capture = useCallback(() => {
         if (videoRef.current && canvasRef.current) {
