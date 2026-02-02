@@ -141,7 +141,7 @@ export default function CardfloApp() {
                     <div className="absolute inset-0 border-[6px] border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
                 <div className="space-y-2">
-                    <h3 className="text-4xl font-black text-white tracking-tight">AI OCR Formulation...</h3>
+                    <h3 className="text-4xl font-black text-white tracking-tight">AI OCR Formulation [V2]...</h3>
                     <p className="text-slate-400 font-bold uppercase tracking-tighter text-xs">Transforming pixels to data strings</p>
                 </div>
             </div>
