@@ -1,6 +1,6 @@
 import { useRef, useCallback, useState, useEffect } from "react";
 import { Button } from "@/components/ui/shared";
-import { Camera, RefreshCw } from "lucide-react";
+import { Camera, RefreshCw, Loader2 } from "lucide-react";
 
 interface ScannerScreenProps {
     onCapture: (imageBase64: string) => void;
@@ -10,7 +10,12 @@ interface ScannerScreenProps {
 export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const lastFrameRef = useRef<ImageData | null>(null);
+    const stabilityCountRef = useRef(0);
+
     const [stream, setStream] = useState<MediaStream | null>(null);
+    const [isAutoCapturing, setIsAutoCapturing] = useState(false);
+    const [progress, setProgress] = useState(0);
 
     useEffect(() => {
         let currentStream: MediaStream | null = null;
@@ -18,7 +23,11 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
         const startCameraInstance = async () => {
             try {
                 const mediaStream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: "environment" },
+                    video: {
+                        facingMode: "environment",
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    },
                 });
                 currentStream = mediaStream;
                 setStream(mediaStream);
@@ -51,16 +60,60 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
             const context = canvas.getContext("2d");
             if (context) {
                 context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                const imageBase64 = canvas.toDataURL("image/jpeg", 0.8);
+                const imageBase64 = canvas.toDataURL("image/jpeg", 0.95); // High quality
                 onCapture(imageBase64);
             }
         }
     }, [onCapture]);
 
+    // Auto-capture logic
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (!videoRef.current || !canvasRef.current || isAutoCapturing) return;
+
+            const video = videoRef.current;
+            if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+
+            // Use a small hidden canvas for stability check
+            const checkCanvas = document.createElement('canvas');
+            checkCanvas.width = 100;
+            checkCanvas.height = 100;
+            const ctx = checkCanvas.getContext('2d');
+            if (!ctx) return;
+
+            // Draw center portion
+            ctx.drawImage(video, video.videoWidth / 4, video.videoHeight / 4, video.videoWidth / 2, video.videoHeight / 2, 0, 0, 100, 100);
+            const currentFrame = ctx.getImageData(0, 0, 100, 100);
+
+            if (lastFrameRef.current) {
+                let diff = 0;
+                for (let i = 0; i < currentFrame.data.length; i += 4) {
+                    diff += Math.abs(currentFrame.data[i] - lastFrameRef.current.data[i]);
+                }
+
+                const threshold = 150000; // Adjust based on testing
+                if (diff < threshold) {
+                    stabilityCountRef.current += 1;
+                    setProgress(Math.min((stabilityCountRef.current / 4) * 100, 100)); // ~2 seconds stability
+
+                    if (stabilityCountRef.current >= 4) {
+                        setIsAutoCapturing(true);
+                        capture();
+                    }
+                } else {
+                    stabilityCountRef.current = 0;
+                    setProgress(0);
+                }
+            }
+            lastFrameRef.current = currentFrame;
+        }, 500);
+
+        return () => clearInterval(interval);
+    }, [capture, isAutoCapturing]);
+
     return (
         <div className="fixed inset-0 bg-black flex flex-col z-50">
             <div className="relative flex-1 overflow-hidden">
-                {/* Helper Video Element */}
                 <video
                     ref={videoRef}
                     autoPlay
@@ -71,32 +124,73 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
 
                 {/* Overlay Guide */}
                 <div className="absolute inset-0 border-[40px] border-black/50 pointer-events-none flex items-center justify-center">
-                    <div className="w-full h-64 border-2 border-emerald-500/50 rounded-lg relative">
-                        <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-emerald-400 -mt-0.5 -ml-0.5"></div>
-                        <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-emerald-400 -mt-0.5 -mr-0.5"></div>
-                        <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-emerald-400 -mb-0.5 -ml-0.5"></div>
-                        <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-emerald-400 -mb-0.5 -mr-0.5"></div>
-                        <p className="text-emerald-400 text-xs text-center mt-2 font-medium tracking-widest uppercase opacity-80 backdrop-blur-sm bg-black/30 py-1">Position Card Here</p>
+                    <div className="w-full h-64 border-2 border-emerald-500/30 rounded-lg relative">
+                        <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-emerald-400"></div>
+                        <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-emerald-400"></div>
+                        <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-emerald-400"></div>
+                        <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-emerald-400"></div>
+
+                        <div className="absolute inset-0 flex flex-col items-center justify-center space-y-2">
+                            <p className="text-emerald-400 text-xs font-medium tracking-widest uppercase bg-black/40 px-3 py-1 rounded-full backdrop-blur-sm">
+                                {progress > 0 ? "Hold Still..." : "Position Card"}
+                            </p>
+                            {progress > 0 && (
+                                <div className="w-32 h-1 bg-white/10 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-emerald-500 transition-all duration-300"
+                                        style={{ width: `${progress}%` }}
+                                    />
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div className="h-32 bg-slate-950 flex items-center justify-between px-8 pb-4">
-                <Button variant="ghost" size="icon" onClick={onCancel} className="text-white">
-                    <span className="sr-only">Cancel</span>
+            <div className="h-32 bg-slate-950 flex items-center justify-between px-8">
+                <Button variant="ghost" onClick={onCancel} className="text-white hover:bg-white/10">
                     Cancel
                 </Button>
 
-                <button
-                    onClick={capture}
-                    className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center relative group"
-                >
-                    <div className="w-16 h-16 bg-white rounded-full transition-transform group-active:scale-90" />
-                </button>
+                <div className="relative flex items-center justify-center">
+                    {/* Progress Ring */}
+                    <svg className="w-24 h-24 absolute -rotate-90 pointer-events-none">
+                        <circle
+                            cx="48"
+                            cy="48"
+                            r="42"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                            fill="transparent"
+                            className="text-white/10"
+                        />
+                        <circle
+                            cx="48"
+                            cy="48"
+                            r="42"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                            fill="transparent"
+                            strokeDasharray={264}
+                            strokeDashoffset={264 - (progress / 100) * 264}
+                            className="text-emerald-500 transition-all duration-300"
+                        />
+                    </svg>
+                    <button
+                        onClick={capture}
+                        disabled={isAutoCapturing}
+                        className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center relative group z-10"
+                    >
+                        <div className="w-16 h-16 bg-white rounded-full transition-transform group-active:scale-90" />
+                        {isAutoCapturing && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-full">
+                                <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+                            </div>
+                        )}
+                    </button>
+                </div>
 
-                <Button variant="ghost" size="icon" onClick={() => {/* Toggle Camera Logic */ }} className="text-white opacity-50">
-                    <RefreshCw className="w-6 h-6" />
-                </Button>
+                <div className="w-20" /> {/* Spacer */}
             </div>
         </div>
     );
