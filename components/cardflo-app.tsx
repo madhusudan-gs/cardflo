@@ -36,7 +36,6 @@ export default function CardfloApp() {
     }, []);
 
     const handleCapture = async (imageBase64: string) => {
-        // Use env var or ask. For now assuming env var for commercial app
         const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
         if (!apiKey) {
             alert("Missing Gemini API Key in Environment");
