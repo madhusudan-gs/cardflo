@@ -193,9 +193,19 @@ export default function CardfloApp() {
                     <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Cardflo</h1>
                     <p className="text-slate-400 text-xs">{session?.user.email}</p>
                 </div>
-                <Button variant="ghost" size="icon" onClick={handleSignOut} className="text-slate-500 hover:text-white">
-                    <LogOut className="w-5 h-5" />
-                </Button>
+                <div className="flex items-center space-x-2">
+                    <Button
+                        variant="ghost"
+                        className="text-slate-500 hover:text-emerald-400 flex items-center space-x-2 px-3"
+                        onClick={() => setStatus("LEADS")}
+                    >
+                        <Database className="w-4 h-4" />
+                        <span className="text-xs font-bold uppercase tracking-widest">My Leads</span>
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={handleSignOut} className="text-slate-500 hover:text-white">
+                        <LogOut className="w-5 h-5" />
+                    </Button>
+                </div>
             </header>
 
             <main className="flex-1 flex flex-col justify-center items-center space-y-8">
@@ -216,14 +226,6 @@ export default function CardfloApp() {
                     </Button>
                 </div>
 
-                <Button
-                    variant="ghost"
-                    className="text-slate-500 hover:text-emerald-400 transition-colors flex items-center space-x-2"
-                    onClick={() => setStatus("LEADS")}
-                >
-                    <Database className="w-4 h-4" />
-                    <span className="text-xs font-bold uppercase tracking-widest">View My Leads</span>
-                </Button>
 
                 <div className="grid grid-cols-2 gap-4 w-full max-w-sm mt-8">
                     <div className="glass-panel p-4 rounded-xl text-center">
