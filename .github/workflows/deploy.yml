@@ -11,13 +11,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Ensure full history for git-related tools if needed
+
+      - name: De-git Repository
+        run: rm -rf .git # Removes all git metadata to prevent Error 128 in any subsequent step
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
 
       - name: Install and Build
         run: |
@@ -29,13 +31,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_GEMINI_API_KEY: ${{ secrets.NEXT_PUBLIC_GEMINI_API_KEY }}
 
-      - name: Deploy to Hostinger (lftp)
+      - name: Deploy to Hostinger (lftp sync)
         run: |
-          sudo apt-get update && sudo apt-get install -y lftp
-          lftp -e "
-            set ftp:ssl-allow no; 
-            set ftp:list-options -a;
-            open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_SERVER }};
-            mirror -R ./out/ ./ --delete --ignore-time --parallel=10;
-            quit
-          "
+          sudo apt-get install -y lftp
+          lftp -c "set ftp:ssl-allow no; set ftp:list-options -a; open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_SERVER }}; mirror -R ./out/ ./ --delete --ignore-time --parallel=10; quit"
