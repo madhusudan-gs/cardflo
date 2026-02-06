@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button, Input, Label, Textarea } from "@/components/ui/shared";
 import { CardData } from "@/lib/types";
-import { ArrowLeft, Save, Trash2, Check, Sparkles } from "lucide-react";
+import { ArrowLeft, Save, Trash2, Check, Sparkles, Database, AlertTriangle } from "lucide-react";
 
 interface ReviewScreenProps {
     data: CardData;
@@ -156,7 +156,7 @@ export function ReviewScreen({ data: initialData, frontImage, backImage, onSave,
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">AI Summary</Label>
+                            <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Contact Notes</Label>
                             <Textarea
                                 value={data.notes}
                                 onChange={(e) => handleChange("notes", e.target.value)}
@@ -165,11 +165,63 @@ export function ReviewScreen({ data: initialData, frontImage, backImage, onSave,
                             />
                         </div>
 
+                        {/* Partial Capture Warning */}
+                        {data.isPartial && (
+                            <div className="bg-red-500/10 border border-red-500/30 rounded-3xl p-6 space-y-3 animate-in fade-in slide-in-from-top-4 duration-500">
+                                <div className="flex items-center gap-3 text-red-400">
+                                    <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-black uppercase tracking-tight">Partial Data Captured</span>
+                                        <span className="text-[10px] font-bold opacity-80 uppercase leading-none">Detection: Obstruction or Obscured Info</span>
+                                    </div>
+                                </div>
+                                <p className="text-xs text-red-500/70 font-medium leading-relaxed italic">
+                                    "The AI detects something (like fingers or objects) might be covering part of the card. Please ensure the card is fully visible for 100% accuracy."
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Duplicate Warning Prompt */}
+                        {data.isDuplicate && (
+                            <div className="bg-amber-500/10 border border-amber-500/30 rounded-3xl p-6 space-y-4 animate-in fade-in zoom-in duration-300">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center border border-amber-500/30">
+                                        <Database className="w-4 h-4 text-amber-500" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-black text-amber-500 uppercase tracking-tight">Potential Duplicate Detected</span>
+                                        <span className="text-[10px] text-amber-500/70 font-bold uppercase">Email or name already exists in database</span>
+                                    </div>
+                                </div>
+                                <div className="flex gap-3">
+                                    <Button
+                                        onClick={() => onSave(data)}
+                                        variant="outline"
+                                        className="flex-1 h-12 border-amber-500/30 text-amber-500 hover:bg-amber-500 hover:text-white font-bold rounded-2xl text-[10px] uppercase tracking-widest transition-all"
+                                    >
+                                        Sync Anyway
+                                    </Button>
+                                    <Button
+                                        onClick={onCancel}
+                                        className="flex-1 h-12 bg-slate-800 text-slate-300 hover:bg-red-500 hover:text-white font-bold rounded-2xl text-[10px] uppercase tracking-widest transition-all border-none"
+                                    >
+                                        Discard Draft
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="pt-4 mt-auto">
-                            <Button onClick={() => onSave(data)} className="w-full h-16 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-lg rounded-3xl shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3">
-                                <Check className="w-6 h-6" />
-                                Confirm & Sync
-                            </Button>
+                            {!data.isDuplicate ? (
+                                <Button onClick={() => onSave(data)} className="w-full h-16 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-lg rounded-3xl shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3">
+                                    <Check className="w-6 h-6" />
+                                    Confirm & Sync
+                                </Button>
+                            ) : (
+                                <p className="text-center text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] px-4">
+                                    Review data above to decide how to proceed with this duplicate
+                                </p>
+                            )}
                         </div>
                     </div>
                 </div>

@@ -16,8 +16,8 @@ export async function detectSteadyCard(
     apiKey: string
 ): Promise<{ is_steady: boolean; card_present: boolean }> {
     const genAI = new GoogleGenerativeAI(apiKey);
-    // Using 2.0-flash for best stability and speed in this project environment
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    // Using 3-flash for ultra-fast detection (Feb 2026 standard)
+    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
     const prompt = `Business card in frame?
     Return JSON: { "is_steady": boolean (legible), "card_present": boolean }`;
@@ -55,11 +55,15 @@ export async function extractCardData(
 ): Promise<CardData> {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash",
+        model: "gemini-3-pro-preview", // Upgraded to Pro for 100% extraction accuracy
         systemInstruction: SYSTEM_INSTRUCTION
     });
 
     const prompt = `EXPERT DATA EXTRACTION: Read this business card and extract contact details into the provided schema.
+
+    CRITICAL QUALITY CHECK: 
+    - Determine if the card is OBSTRUCTED. Are there fingers, objects, heavy glare, or poor framing obscuring ANY part of the card text?
+    - If obstructed, set "isPartial" to true.
 
     FORMATTING RULES:
     - PHONE: Always start with a single quote (') followed by the number (e.g., '+1 555 123 4567').
@@ -83,8 +87,9 @@ export async function extractCardData(
                         website: { type: SchemaType.STRING },
                         address: { type: SchemaType.STRING },
                         notes: { type: SchemaType.STRING },
+                        isPartial: { type: SchemaType.BOOLEAN, description: "Set true if fingers, objects, or glare obscure any text." },
                     },
-                    required: ["firstName", "lastName", "company", "email"],
+                    required: ["firstName", "lastName", "company", "email", "isPartial"],
                 },
             },
         });

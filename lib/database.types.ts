@@ -17,6 +17,15 @@ export interface Database {
                     full_name: string | null
                     avatar_url: string | null
                     updated_at: string | null
+                    subscription_tier: 'starter' | 'lite' | 'standard' | 'pro' | 'team' | null
+                    subscription_status: 'active' | 'canceled' | 'past_due' | 'trialing' | 'none' | null
+                    billing_cycle_end: string | null
+                    stripe_customer_id: string | null
+                    stripe_subscription_id: string | null
+                    razorpay_customer_id: string | null
+                    razorpay_subscription_id: string | null
+                    referral_code: string | null
+                    team_id: string | null
                 }
                 Insert: {
                     id: string
@@ -24,6 +33,15 @@ export interface Database {
                     full_name?: string | null
                     avatar_url?: string | null
                     updated_at?: string | null
+                    subscription_tier?: 'starter' | 'lite' | 'standard' | 'pro' | 'team' | null
+                    subscription_status?: 'active' | 'canceled' | 'past_due' | 'trialing' | 'none' | null
+                    billing_cycle_end?: string | null
+                    stripe_customer_id?: string | null
+                    stripe_subscription_id?: string | null
+                    razorpay_customer_id?: string | null
+                    razorpay_subscription_id?: string | null
+                    referral_code?: string | null
+                    team_id?: string | null
                 }
                 Update: {
                     id?: string
@@ -31,6 +49,15 @@ export interface Database {
                     full_name?: string | null
                     avatar_url?: string | null
                     updated_at?: string | null
+                    subscription_tier?: 'starter' | 'lite' | 'standard' | 'pro' | 'team' | null
+                    subscription_status?: 'active' | 'canceled' | 'past_due' | 'trialing' | 'none' | null
+                    billing_cycle_end?: string | null
+                    stripe_customer_id?: string | null
+                    stripe_subscription_id?: string | null
+                    razorpay_customer_id?: string | null
+                    razorpay_subscription_id?: string | null
+                    referral_code?: string | null
+                    team_id?: string | null
                 }
             }
             leads: {
@@ -121,6 +148,35 @@ export interface Database {
                     user_id?: string
                     role?: 'owner' | 'admin' | 'member'
                     joined_at?: string
+                }
+            }
+            usage: {
+                Row: {
+                    id: string
+                    user_id: string
+                    cycle_start: string | null
+                    cycle_end: string | null
+                    scans_count: number | null
+                    bonus_scans_remaining: number | null
+                    created_at: string | null
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    cycle_start?: string | null
+                    cycle_end?: string | null
+                    scans_count?: number | null
+                    bonus_scans_remaining?: number | null
+                    created_at?: string | null
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    cycle_start?: string | null
+                    cycle_end?: string | null
+                    scans_count?: number | null
+                    bonus_scans_remaining?: number | null
+                    created_at?: string | null
                 }
             }
         }

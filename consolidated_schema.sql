@@ -57,6 +57,9 @@ create policy "Users can insert own leads" on public.leads for insert with check
 drop policy if exists "Users can update own leads" on public.leads;
 create policy "Users can update own leads" on public.leads for update using (auth.uid() = created_by);
 
+drop policy if exists "Users can delete own leads" on public.leads;
+create policy "Users can delete own leads" on public.leads for delete using (auth.uid() = created_by);
+
 -- 6. Drafts Policies
 drop policy if exists "Users can view own drafts" on public.drafts;
 create policy "Users can view own drafts" on public.drafts for select using (auth.uid() = created_by);
