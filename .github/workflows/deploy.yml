@@ -29,6 +29,9 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_GEMINI_API_KEY: ${{ secrets.NEXT_PUBLIC_GEMINI_API_KEY }}
 
+      - name: Remove Git metadata
+        run: rm -rf .git
+
       - name: Deploy to Hostinger (FTP)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
@@ -37,8 +40,4 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./out/
           server-dir: ./
-          dangerous-clean-slate: false # Changed to false to avoid extreme git state dependency
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
+          dangerous-clean-slate: true
