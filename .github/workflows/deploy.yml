@@ -27,7 +27,8 @@ jobs:
         run: |
           npm ci
           npm run build
-          ls -R out/ # Verify build output exists
+          echo "Build Success: $(date)" > out/deploy-check.txt
+          echo "COMMIT: ${{ github.sha }}" >> out/deploy-check.txt
           cp public/.htaccess out/ || true
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
@@ -45,8 +46,9 @@ jobs:
             set ftp:ssl-allow no;
             set ftp:passive-mode true;
             set net:timeout 15;
-            set net:max-retries 10;
-            set net:reconnect-interval-base 5;
+            set net:max-retries 5;
             open -u '$FTP_USERNAME','$FTP_PASSWORD' $FTP_SERVER;
-            mirror -R ./out/ ./ --delete --ignore-time --parallel=10;
+            # Try to find public_html, otherwise stay in root
+            cd public_html || true;
+            mirror -R ./out/ ./ --delete --ignore-time --parallel=10 --verbose;
           "

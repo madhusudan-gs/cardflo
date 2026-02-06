@@ -406,6 +406,10 @@ export default function CardfloApp() {
                         <span className="text-[10px] font-black uppercase tracking-[0.3em]">Admin Access</span>
                     </Button>
                 )}
+
+                <div className="mt-8 opacity-20 text-[8px] font-mono tracking-widest uppercase">
+                    Build: v2.0.debug-sync
+                </div>
             </main>
         </div>
     );
