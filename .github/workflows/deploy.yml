@@ -29,15 +29,13 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_GEMINI_API_KEY: ${{ secrets.NEXT_PUBLIC_GEMINI_API_KEY }}
 
-      - name: Fix Git safe directory
-        run: git config --global --add safe.directory /github/workspace
-
-      - name: Deploy to Hostinger (FTP)
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./out/
-          server-dir: ./
-          dangerous-clean-slate: true
+      - name: Deploy to Hostinger (lftp)
+        run: |
+          sudo apt-get update && sudo apt-get install -y lftp
+          lftp -e "
+            set ftp:ssl-allow no; 
+            set ftp:list-options -a;
+            open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_SERVER }};
+            mirror -R ./out/ ./ --delete --ignore-time --parallel=10;
+            quit
+          "
