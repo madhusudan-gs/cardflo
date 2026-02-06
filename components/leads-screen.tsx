@@ -41,8 +41,8 @@ export function LeadsScreen({ onBack }: { onBack: () => void }) {
     const deleteLead = async (id: string) => {
         if (!confirm("Are you sure you want to delete this lead?")) return;
 
-        const { error } = await supabase
-            .from('leads')
+        const { error } = await (supabase
+            .from('leads') as any)
             .delete()
             .eq('id', id);
 

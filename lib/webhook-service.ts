@@ -39,8 +39,8 @@ export async function handleSubscriptionUpdated({
     }
 
     const { error } = await (supabase
-        .from('profiles')
-        .update(updateData) as any)
+        .from('profiles') as any)
+        .update(updateData)
         .eq('id', userId);
 
     if (error) {

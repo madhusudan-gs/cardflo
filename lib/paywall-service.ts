@@ -46,7 +46,9 @@ export async function getUserProfile(userId: string) {
             stripe_customer_id,
             stripe_subscription_id,
             razorpay_customer_id,
-            razorpay_subscription_id
+            razorpay_subscription_id,
+            referral_code,
+            is_admin
         `)
         .eq('id', userId)
         .single();
@@ -113,10 +115,9 @@ export async function incrementUsage(userId: string) {
 
     // 2. If usage exists and is in current cycle, update it
     if (usage && (!(usage as any).cycle_end || new Date((usage as any).cycle_end) > new Date())) {
-        const updateData: any = { scans_count: ((usage as any).scans_count || 0) + 1 };
-        await (supabase
-            .from('usage')
-            .update(updateData) as any)
+        const updateData = { scans_count: ((usage as any).scans_count || 0) + 1 };
+        await (supabase.from('usage') as any)
+            .update(updateData)
             .eq('id', (usage as any).id);
     } else {
         // 3. Create new usage record for new cycle

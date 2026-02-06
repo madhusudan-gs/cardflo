@@ -12,8 +12,8 @@ export async function saveCard(card: CardData, userId: string): Promise<boolean>
             throw new Error(reason === 'limit_reached' ? 'Scan limit reached. Please upgrade your plan.' : 'Unauthorized scan attempt.');
         }
 
-        const { error } = await supabase
-            .from('leads')
+        const { error } = await (supabase
+            .from('leads') as any)
             .insert({
                 created_by: userId,
                 first_name: card.firstName?.trim(),
@@ -74,8 +74,8 @@ export async function getStats(userId: string): Promise<{ today: number, total: 
 
 export async function saveDraft(card: CardData, userId: string): Promise<string | null> {
     try {
-        const { data, error } = await supabase
-            .from('drafts')
+        const { data, error } = await (supabase
+            .from('drafts') as any)
             .insert({
                 created_by: userId,
                 first_name: card.firstName?.trim(),
@@ -107,8 +107,8 @@ export async function saveDraft(card: CardData, userId: string): Promise<string 
 
 export async function deleteDraft(draftId: string): Promise<boolean> {
     try {
-        const { error } = await supabase
-            .from('drafts')
+        const { error } = await (supabase
+            .from('drafts') as any)
             .delete()
             .eq('id', draftId);
 
@@ -230,8 +230,8 @@ export async function updateLead(leadId: string, leadData: Partial<Lead>): Promi
         console.log(`[UPDATE LEAD] Attempting update for ID: ${leadId}`, editableData);
 
         const { error } = await (supabase
-            .from('leads')
-            .update(editableData) as any)
+            .from('leads') as any)
+            .update(editableData)
             .eq('id', leadId);
 
         if (error) {
