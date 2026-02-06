@@ -25,6 +25,7 @@ jobs:
         run: |
           npm ci
           npm run build
+          ls -R out/ # Verify build output exists
           cp public/.htaccess out/ || true
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
@@ -34,4 +35,13 @@ jobs:
       - name: Deploy to Hostinger (lftp sync)
         run: |
           sudo apt-get install -y lftp
-          lftp -c "set ftp:ssl-allow no; set ftp:list-options -a; open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_SERVER }}; mirror -R ./out/ ./ --delete --ignore-time --parallel=10; quit"
+          lftp -c "
+            set ftp:ssl-allow no;
+            set ftp:passive-mode true;
+            set ftp:list-options -a;
+            set net:timeout 10;
+            set net:max-retries 3;
+            open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_SERVER }};
+            mirror -R ./out/ ./ --delete --ignore-time --parallel=10;
+            quit
+          "

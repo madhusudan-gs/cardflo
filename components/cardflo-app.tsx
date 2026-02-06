@@ -232,7 +232,7 @@ export default function CardfloApp() {
         );
     }
 
-    if (status === "ADMIN") {
+    if ((status as string) === "ADMIN") {
         return <AdminDashboard onBack={() => setStatus("IDLE")} />;
     }
 
