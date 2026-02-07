@@ -49,17 +49,8 @@ jobs:
             set net:max-retries 5
             open -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER"
             
-            # --- AGGRESSIVE SYNC STRATEGY ---
-            # 1. Probe for web root
-            cd public_html || cd domains/*/public_html || echo "Staying in root"
-            
-            # 2. Force delete old entry points to break cache/avoid skip
-            rm -f index.html 404.html deploy-check.txt
-            
-            # 3. Mirror everything (force upload even if size matches)
+            # Direct Sync to root (verified as web root in previous logs)
+            # --always-upload ensures index.html is overwritten
             mirror -R --always-upload --delete --parallel=10 --verbose ./out/ ./
-            
-            # 4. Final verify
-            ls -la index.html
             quit
           EOF
