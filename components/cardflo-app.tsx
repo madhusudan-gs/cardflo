@@ -31,6 +31,8 @@ export default function CardfloApp() {
     const [usageStats, setUsageStats] = useState<{ count: number; bonus: number }>({ count: 0, bonus: 0 });
     const [referralCode, setReferralCode] = useState<string>("");
     const [isAdmin, setIsAdmin] = useState(false);
+    const [userRole, setUserRole] = useState<'super_admin' | 'team_admin' | 'none'>('none');
+    const [teamId, setTeamId] = useState<string | null>(null);
 
     useEffect(() => {
         // Check active session
@@ -53,10 +55,36 @@ export default function CardfloApp() {
     useEffect(() => {
         if (status === "IDLE" && session?.user.id) {
             getStats(session.user.id).then(setStats);
-            getUserProfile(session.user.id).then(profile => {
+            getUserProfile(session.user.id).then(async profile => {
                 if (profile?.subscription_tier) setSubscriptionTier(profile.subscription_tier as SubscriptionTier);
                 if (profile?.referral_code) setReferralCode(profile.referral_code);
-                if ((profile as any)?.is_admin) setIsAdmin(true);
+
+                let effectiveTeamId = profile?.team_id || null;
+                setTeamId(effectiveTeamId);
+
+                if ((profile as any)?.is_admin) {
+                    setIsAdmin(true);
+                    setUserRole('super_admin');
+                } else if (effectiveTeamId) {
+                    // Check if they are a Team Admin (owner or admin role)
+                    const { data: memberData } = await supabase
+                        .from('team_members')
+                        .select('role')
+                        .eq('user_id', session.user.id)
+                        .eq('team_id', effectiveTeamId)
+                        .single();
+
+                    if (memberData && ((memberData as any).role === 'owner' || (memberData as any).role === 'admin')) {
+                        setIsAdmin(true);
+                        setUserRole('team_admin');
+                    } else {
+                        setIsAdmin(false);
+                        setUserRole('none');
+                    }
+                } else {
+                    setIsAdmin(false);
+                    setUserRole('none');
+                }
             });
             getUserUsage(session.user.id).then(usage => {
                 if (usage) setUsageStats({ count: usage.scans_count || 0, bonus: usage.bonus_scans_remaining || 0 });
@@ -233,7 +261,7 @@ export default function CardfloApp() {
     }
 
     if ((status as string) === "ADMIN") {
-        return <AdminDashboard onBack={() => setStatus("IDLE")} />;
+        return <AdminDashboard onBack={() => setStatus("IDLE")} userRole={userRole as any} teamId={teamId} />;
     }
 
     if (status === "REVIEWING" && currentCard) {

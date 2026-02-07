@@ -5,7 +5,11 @@ import { supabase } from "@/lib/supabase";
 import { Button } from "./ui/shared";
 import { ChevronLeft, Users, Database, CreditCard, Activity, Loader2 } from "lucide-react";
 
-export function AdminDashboard({ onBack }: { onBack: () => void }) {
+export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
+    onBack: () => void,
+    userRole?: 'super_admin' | 'team_admin',
+    teamId?: string | null
+}) {
     const [stats, setStats] = useState<{
         totalUsers: number;
         totalLeads: number;
@@ -30,17 +34,29 @@ export function AdminDashboard({ onBack }: { onBack: () => void }) {
 
     useEffect(() => {
         const fetchAdminStats = async () => {
-            // 1. Fetch Profiles for Aggregation
-            const { data: profiles, error: pError } = await supabase
+            // 1. Fetch Profiles
+            let profileQuery = supabase
                 .from('profiles')
-                .select('id, email, subscription_tier, subscription_status, created_at')
+                .select('id, email, subscription_tier, subscription_status, created_at, team_id');
+
+            if (userRole === 'team_admin' && teamId) {
+                profileQuery = profileQuery.eq('team_id', teamId);
+            }
+
+            const { data: profiles, error: pError } = await profileQuery
                 .order('created_at', { ascending: false });
 
-            // 2. Fetch Total Leads Count & Recent Leads
-            const { count: leadCount } = await supabase.from('leads').select('*', { count: 'exact', head: true });
-            const { data: recentLeads } = await supabase
-                .from('leads')
-                .select('id, first_name, last_name, company, created_at')
+            // 2. Fetch Leads
+            let leadCountQuery = supabase.from('leads').select('*', { count: 'exact', head: true });
+            let recentLeadsQuery = supabase.from('leads').select('id, first_name, last_name, company, created_at, team_id');
+
+            if (userRole === 'team_admin' && teamId) {
+                leadCountQuery = leadCountQuery.eq('team_id', teamId);
+                recentLeadsQuery = recentLeadsQuery.eq('team_id', teamId);
+            }
+
+            const { count: leadCount } = await leadCountQuery;
+            const { data: recentLeads } = await recentLeadsQuery
                 .order('created_at', { ascending: false })
                 .limit(10);
 
@@ -79,13 +95,15 @@ export function AdminDashboard({ onBack }: { onBack: () => void }) {
         };
 
         fetchAdminStats();
-    }, []);
+    }, [userRole, teamId]);
 
     if (loading) {
         return (
             <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center">
                 <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mb-4" />
-                <p className="text-slate-400 text-sm font-bold uppercase tracking-widest text-[10px]">Super Admin Pulse...</p>
+                <p className="text-slate-400 text-sm font-bold uppercase tracking-widest text-[10px]">
+                    {userRole === 'super_admin' ? 'Super Admin Pulse...' : 'Team Sync...'}
+                </p>
             </div>
         );
     }
@@ -98,8 +116,12 @@ export function AdminDashboard({ onBack }: { onBack: () => void }) {
                         <ChevronLeft className="w-5 h-5" />
                     </Button>
                     <div>
-                        <h2 className="text-xl font-black text-white tracking-tight leading-none uppercase italic">Super Admin</h2>
-                        <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1">Platform Analytics</p>
+                        <h2 className="text-xl font-black text-white tracking-tight leading-none uppercase italic">
+                            {userRole === 'super_admin' ? 'Super Admin' : 'Team Admin'}
+                        </h2>
+                        <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1">
+                            {userRole === 'super_admin' ? 'Platform Analytics' : 'Organization Hub'}
+                        </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2 text-[8px] font-black text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20 uppercase tracking-widest">
