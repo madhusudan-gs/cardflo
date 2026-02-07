@@ -48,7 +48,13 @@ jobs:
             set net:timeout 15;
             set net:max-retries 5;
             open -u '$FTP_USERNAME','$FTP_PASSWORD' $FTP_SERVER;
-            # Try to find public_html, otherwise stay in root
-            cd public_html || true;
+            echo 'ROOT DIRECTORY LISTING:'
+            ls -la
+            echo 'TRYING TO FIND public_html...'
+            ls -d public_html || echo 'public_html NOT FOUND'
+            # Try to navigate and sync
+            cd public_html || echo 'Staying in root';
+            echo 'TARGET DIRECTORY LISTING:'
+            ls -la
             mirror -R ./out/ ./ --delete --ignore-time --parallel=10 --verbose;
           "
