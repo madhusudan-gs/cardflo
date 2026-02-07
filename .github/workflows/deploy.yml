@@ -42,19 +42,16 @@ jobs:
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         run: |
           sudo apt-get install -y lftp
-          lftp -c "
-            set ftp:ssl-allow no;
-            set ftp:passive-mode true;
-            set net:timeout 15;
-            set net:max-retries 5;
-            open -u '$FTP_USERNAME','$FTP_PASSWORD' $FTP_SERVER;
-            echo 'ROOT DIRECTORY LISTING:'
+          lftp <<EOF
+            set ftp:ssl-allow no
+            set ftp:passive-mode true
+            set net:timeout 15
+            set net:max-retries 5
+            open -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER"
             ls -la
-            echo 'TRYING TO FIND public_html...'
-            ls -d public_html || echo 'public_html NOT FOUND'
-            # Try to navigate and sync
-            cd public_html || echo 'Staying in root';
-            echo 'TARGET DIRECTORY LISTING:'
+            # Try to navigate to common web roots
+            cd public_html || cd domains/*/public_html || echo "Staying in root"
             ls -la
-            mirror -R ./out/ ./ --delete --ignore-time --parallel=10 --verbose;
-          "
+            mirror -R ./out/ ./ --delete --ignore-time --parallel=10 --verbose
+            quit
+          EOF
