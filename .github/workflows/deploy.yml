@@ -54,8 +54,8 @@ jobs:
             # Navigate to web root
             cd ./ || echo "Already at root"
             
-            # Always-upload forces overwriting of index.html
-            # --delete removes old files without a separate pre-calculation step
-            mirror -R --always-upload --delete --parallel=5 --verbose ./out/ ./
+            # Parallel=1 is safer for shared hosting connection limits
+            # --always-upload ensures index.html is overwritten
+            mirror -R --always-upload --delete --parallel=1 --verbose=3 ./out/ ./
             quit
           EOF
