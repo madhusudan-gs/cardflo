@@ -35,6 +35,7 @@ jobs:
 
       - name: Prepare Assets
         run: |
+          ls -R out/
           echo "Build Success: $(date)" > out/deploy-check.txt
           echo "COMMIT: ${{ github.sha }}" >> out/deploy-check.txt
           cp public/.htaccess out/ || true
@@ -53,7 +54,7 @@ jobs:
             set net:max-retries 10
             open -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER"
             
-            # Use basic mirror -R with forced upload
-            mirror -R --always-upload --delete --verbose ./out/ ./
+            # Use basic mirror -R with forced upload (ignore-time handles overwrite)
+            mirror -R --ignore-time --delete --verbose ./out/ ./
             quit
           EOF
