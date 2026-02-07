@@ -408,7 +408,7 @@ export default function CardfloApp() {
                 )}
 
                 <div className="mt-8 opacity-20 text-[8px] font-mono tracking-widest uppercase">
-                    Build: v2.0.debug-sync
+                    Build: v3.0.NUCLEAR-SYNC
                 </div>
             </main>
         </div>
