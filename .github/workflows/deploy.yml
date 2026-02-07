@@ -23,19 +23,23 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install and Build
-        run: |
-          npm ci
-          npm run build
-          echo "Build Success: $(date)" > out/deploy-check.txt
-          echo "COMMIT: ${{ github.sha }}" >> out/deploy-check.txt
-          cp public/.htaccess out/ || true
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Project
+        run: npm run build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_GEMINI_API_KEY: ${{ secrets.NEXT_PUBLIC_GEMINI_API_KEY }}
 
-      - name: Deploy to Hostinger (Priority Sync)
+      - name: Prepare Assets
+        run: |
+          echo "Build Success: $(date)" > out/deploy-check.txt
+          echo "COMMIT: ${{ github.sha }}" >> out/deploy-check.txt
+          cp public/.htaccess out/ || true
+
+      - name: Deploy to Hostinger (Final Cleanup Sync)
         env:
           FTP_SERVER: ${{ secrets.FTP_SERVER }}
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
@@ -45,16 +49,11 @@ jobs:
           lftp <<EOF
             set ftp:ssl-allow no
             set ftp:passive-mode true
-            set net:timeout 120
+            set net:timeout 60
             set net:max-retries 10
             open -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER"
             
-            # 1. Explicitly upload main entry points first (Priority)
-            put -O ./ ./out/index.html
-            put -O ./ ./out/404.html
-            put -O ./ ./out/deploy-check.txt
-            
-            # 2. Mirror the rest of the assets (Stabilized)
-            mirror -R --always-upload --delete --parallel=1 --verbose ./out/ ./
+            # Use basic mirror -R with forced upload
+            mirror -R --always-upload --delete --verbose ./out/ ./
             quit
           EOF
