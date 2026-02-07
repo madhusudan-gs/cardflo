@@ -44,18 +44,14 @@ jobs:
           sudo apt-get install -y lftp
           lftp <<EOF
             set ftp:ssl-allow no
-            set ftp:passive-mode true
-            set net:timeout 60
-            set net:max-retries 20
-            set net:reconnect-interval-base 5
-            set net:reconnect-interval-multiplier 2
+            set ftp:ssl-allow no
+            set ftp:passive-mode off
+            set net:timeout 300
+            set net:max-retries 10
             open -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER"
             
-            # Navigate to web root
-            cd ./ || echo "Already at root"
-            
-            # Parallel=1 is safer for shared hosting connection limits
-            # --always-upload ensures index.html is overwritten
-            mirror -R --always-upload --delete --parallel=1 --verbose=3 ./out/ ./
+            # Simple mirror with Active Mode and forced overwrite
+            # mirror -R --always-upload --delete --verbose=3 ./out/ ./
+            mirror -R -v --always-upload --delete ./out/ ./
             quit
           EOF
