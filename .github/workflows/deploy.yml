@@ -45,13 +45,21 @@ jobs:
           lftp <<EOF
             set ftp:ssl-allow no
             set ftp:passive-mode true
-            set net:timeout 15
+            set net:timeout 30
             set net:max-retries 5
             open -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER"
-            ls -la
-            # Try to navigate to common web roots
+            
+            # --- AGGRESSIVE SYNC STRATEGY ---
+            # 1. Probe for web root
             cd public_html || cd domains/*/public_html || echo "Staying in root"
-            ls -la
-            mirror -R ./out/ ./ --delete --ignore-time --parallel=10 --verbose
+            
+            # 2. Force delete old entry points to break cache/avoid skip
+            rm -f index.html 404.html deploy-check.txt
+            
+            # 3. Mirror everything (force upload even if size matches)
+            mirror -R --always-upload --delete --parallel=10 --verbose ./out/ ./
+            
+            # 4. Final verify
+            ls -la index.html
             quit
           EOF
