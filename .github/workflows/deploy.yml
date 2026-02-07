@@ -35,22 +35,28 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_GEMINI_API_KEY: ${{ secrets.NEXT_PUBLIC_GEMINI_API_KEY }}
 
-      - name: Deploy to Hostinger (lftp sync)
+      - name: Deploy to Hostinger
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./out/
+          server-dir: ./
+          dangerous-clean-slate: false
+          log-level: verbose
+
+      - name: Verify Live Files (Post-Sync)
         env:
           FTP_SERVER: ${{ secrets.FTP_SERVER }}
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         run: |
-          sudo apt-get install -y lftp
           lftp <<EOF
             set ftp:ssl-allow no
             set ftp:passive-mode true
-            set net:timeout 30
-            set net:max-retries 5
             open -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER"
-            
-            # Direct Sync to root (verified as web root in previous logs)
-            # --always-upload ensures index.html is overwritten
-            mirror -R --always-upload --delete --parallel=10 --verbose ./out/ ./
+            ls -la index.html
+            cat index.html | grep -a "v2.0" || echo "VERSION TAG NOT FOUND IN index.html"
             quit
           EOF
