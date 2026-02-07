@@ -35,28 +35,27 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_GEMINI_API_KEY: ${{ secrets.NEXT_PUBLIC_GEMINI_API_KEY }}
 
-      - name: Deploy to Hostinger
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./out/
-          server-dir: ./
-          dangerous-clean-slate: true
-          log-level: verbose
-
-      - name: Verify Live Files (Post-Sync)
+      - name: Deploy to Hostinger (High Resilience Sync)
         env:
           FTP_SERVER: ${{ secrets.FTP_SERVER }}
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         run: |
+          sudo apt-get install -y lftp
           lftp <<EOF
             set ftp:ssl-allow no
             set ftp:passive-mode true
+            set net:timeout 60
+            set net:max-retries 20
+            set net:reconnect-interval-base 5
+            set net:reconnect-interval-multiplier 2
             open -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER"
-            ls -la index.html
-            cat index.html | grep -a "v3.0" || echo "VERSION TAG NOT FOUND IN index.html"
+            
+            # Navigate to web root
+            cd ./ || echo "Already at root"
+            
+            # Always-upload forces overwriting of index.html
+            # --delete removes old files without a separate pre-calculation step
+            mirror -R --always-upload --delete --parallel=5 --verbose ./out/ ./
             quit
           EOF
