@@ -38,18 +38,7 @@ export async function getUserUsage(userId: string) {
 export async function getUserProfile(userId: string) {
     const { data, error } = await supabase
         .from('profiles')
-        .select(`
-            subscription_tier, 
-            subscription_status, 
-            team_id, 
-            billing_cycle_end,
-            stripe_customer_id,
-            stripe_subscription_id,
-            razorpay_customer_id,
-            razorpay_subscription_id,
-            referral_code,
-            *
-        `)
+        .select('*')
         .eq('id', userId)
         .single();
 
