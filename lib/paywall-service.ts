@@ -48,7 +48,7 @@ export async function getUserProfile(userId: string) {
             razorpay_customer_id,
             razorpay_subscription_id,
             referral_code,
-            is_admin
+            *
         `)
         .eq('id', userId)
         .single();

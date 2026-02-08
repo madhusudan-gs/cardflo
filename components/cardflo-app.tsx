@@ -62,7 +62,10 @@ export default function CardfloApp() {
                 let effectiveTeamId = profile?.team_id || null;
                 setTeamId(effectiveTeamId);
 
-                if ((profile as any)?.is_admin) {
+                const isSuper = (profile as any)?.is_super_admin === true;
+                const isAdminOld = (profile as any)?.is_admin === true;
+
+                if (isSuper || isAdminOld) {
                     setIsAdmin(true);
                     setUserRole('super_admin');
                 } else if (effectiveTeamId) {
