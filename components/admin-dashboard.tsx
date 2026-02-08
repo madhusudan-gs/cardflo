@@ -182,7 +182,7 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
                         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl">
                             <h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2">
                                 <Database className="w-3 h-3 text-slate-500" />
-                                Plan Distribution
+                                Upgrade Distribution
                             </h4>
                             <div className="space-y-5">
                                 {Object.entries(stats.planBreakdown).map(([plan, count]) => (

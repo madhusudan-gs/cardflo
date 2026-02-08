@@ -379,7 +379,7 @@ export default function CardfloApp() {
                     onClick={() => setStatus("PAYWALL")}
                 >
                     <CreditCard className="w-4 h-4" />
-                    <span className="text-xs font-bold uppercase tracking-widest">Plan</span>
+                    <span className="text-xs font-bold uppercase tracking-widest">Upgrade</span>
                 </Button>
                 <Button
                     variant="ghost"

@@ -85,7 +85,7 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
                     name: 'Cardflo',
                     description: `${tier.toUpperCase()} Subscription`,
                     handler: function (response: any) {
-                        alert('Payment successful! Your plan will be updated shortly.');
+                        alert('Payment successful! Your upgrade will be active shortly.');
                         if (onClose) onClose();
                     },
                     prefill: {
@@ -129,7 +129,7 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
                             <p className="text-3xl font-black">{usageCount} / {totalLimit} <span className="text-xs text-slate-500 uppercase">Scans Used</span></p>
                         </div>
                         <div className="text-right">
-                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Plan: {currentTier}</span>
+                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Active: {currentTier}</span>
                         </div>
                     </div>
 
@@ -175,7 +175,7 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
                         >
                             {plan.id === currentTier && (
                                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-[10px] font-black uppercase px-3 py-1 rounded-full text-white shadow-lg">
-                                    Current Plan
+                                    Current Tier
                                 </div>
                             )}
 
@@ -209,7 +209,7 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
 
                 <div className="text-center">
                     <Button variant="ghost" onClick={onClose} className="text-slate-500 hover:text-white text-[10px] font-black uppercase tracking-widest">
-                        Continue with free plan
+                        Continue with basic version
                     </Button>
                 </div>
             </div>
