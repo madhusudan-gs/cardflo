@@ -12,7 +12,6 @@ import { ScannerScreen } from "@/components/scanner-screen";
 import { ReviewScreen } from "@/components/review-screen";
 import { LeadsScreen } from "@/components/leads-screen";
 import { PaywallUI } from "@/components/paywall-ui";
-import { CouponAdmin } from "@/components/coupon-admin";
 import { Button } from "@/components/ui/shared";
 import { Loader2, Zap, LogOut, Database, CreditCard, Gift, ShieldCheck, Ticket } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -261,9 +260,6 @@ export default function CardfloApp() {
         );
     }
 
-    if ((status as string) === "COUPON_ADMIN") {
-        return <CouponAdmin onBack={() => setStatus("IDLE")} />;
-    }
 
     if ((status as string) === "ADMIN") {
         return <AdminDashboard onBack={() => setStatus("IDLE")} userRole={userRole as any} teamId={teamId} />;
@@ -429,23 +425,15 @@ export default function CardfloApp() {
                     </div>
                 </div>
 
-                {isAdmin && userRole === 'super_admin' && (
+                {isAdmin && (
                     <div className="flex gap-2 mt-4">
                         <Button
                             variant="ghost"
-                            className="text-slate-700 hover:text-emerald-500/50 flex items-center space-x-2 opacity-50 hover:opacity-100 transition-all"
+                            className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-400 hover:text-slate-950 flex items-center space-x-2 transition-all px-6 py-4 rounded-2xl"
                             onClick={() => setStatus("ADMIN")}
                         >
                             <ShieldCheck className="w-4 h-4" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em]">Stats</span>
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            className="text-slate-700 hover:text-emerald-500/50 flex items-center space-x-2 opacity-50 hover:opacity-100 transition-all"
-                            onClick={() => setStatus("COUPON_ADMIN")}
-                        >
-                            <Ticket className="w-4 h-4" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em]">Coupons</span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em]">{userRole === 'super_admin' ? 'Super Admin' : 'Team Admin'}</span>
                         </Button>
                     </div>
                 )}

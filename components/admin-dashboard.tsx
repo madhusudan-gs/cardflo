@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "./ui/shared";
-import { ChevronLeft, Users, Database, CreditCard, Activity, Loader2 } from "lucide-react";
+import { ChevronLeft, Users, Database, CreditCard, Activity, Loader2, Ticket, Plus, Trash2 } from "lucide-react";
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
     onBack: () => void,
@@ -30,11 +32,18 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
         recentLeads: []
     });
     const [loading, setLoading] = useState(true);
-    const [view, setView] = useState<'stats' | 'users' | 'leads'>('stats');
+    const [view, setView] = useState<'stats' | 'users' | 'leads' | 'coupons'>('stats');
+
+    // Coupon-specific state
+    const [coupons, setCoupons] = useState<any[]>([]);
+    const [generating, setGenerating] = useState(false);
+    const [newCode, setNewCode] = useState("");
+    const [bonusScans, setBonusScans] = useState(50);
+    const [maxUses, setMaxUses] = useState(1);
 
     useEffect(() => {
         const fetchAdminStats = async () => {
-            // 1. Fetch Profiles
+            // ... profile and lead fetching logic ...
             let profileQuery = supabase
                 .from('profiles')
                 .select('id, email, subscription_tier, subscription_status, created_at, team_id');
@@ -46,7 +55,6 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
             const { data: profiles, error: pError } = await profileQuery
                 .order('created_at', { ascending: false });
 
-            // 2. Fetch Leads
             let leadCountQuery = supabase.from('leads').select('*', { count: 'exact', head: true });
             let recentLeadsQuery = supabase.from('leads').select('id, first_name, last_name, company, created_at, team_id');
 
@@ -91,11 +99,44 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
                     recentLeads: recentLeads || []
                 });
             }
+
+            // If super_admin, also fetch coupons
+            if (userRole === 'super_admin') {
+                const { data: couponData } = await supabase
+                    .from('coupons')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                if (couponData) setCoupons(couponData);
+            }
+
             setLoading(false);
         };
 
         fetchAdminStats();
     }, [userRole, teamId]);
+
+    const handleGenerateCoupon = async () => {
+        if (!newCode) return;
+        setGenerating(true);
+        const { error } = await (supabase.from('coupons') as any).insert({
+            code: newCode,
+            bonus_scans: bonusScans,
+            max_uses: maxUses
+        });
+
+        if (!error) {
+            setNewCode("");
+            // Refresh coupons
+            const { data } = await supabase.from('coupons').select('*').order('created_at', { ascending: false });
+            if (data) setCoupons(data);
+        }
+        setGenerating(false);
+    };
+
+    const handleDeleteCoupon = async (id: string) => {
+        await supabase.from('coupons').delete().eq('id', id);
+        setCoupons(coupons.filter(c => c.id !== id));
+    };
 
     if (loading) {
         return (
@@ -133,25 +174,34 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
             <div className="flex gap-2 mb-6 scrollbar-hide overflow-x-auto pb-2">
                 <button
                     onClick={() => setView('stats')}
-                    className={clsx(
+                    className={cn(
                         "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all shrink-0",
                         view === 'stats' ? "bg-white text-black border-white" : "text-slate-500 border-slate-800"
                     )}
                 >Dashboard</button>
                 <button
                     onClick={() => setView('users')}
-                    className={clsx(
+                    className={cn(
                         "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all shrink-0",
                         view === 'users' ? "bg-white text-black border-white" : "text-slate-500 border-slate-800"
                     )}
                 >Users ({stats.totalUsers})</button>
                 <button
                     onClick={() => setView('leads')}
-                    className={clsx(
+                    className={cn(
                         "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all shrink-0",
                         view === 'leads' ? "bg-white text-black border-white" : "text-slate-500 border-slate-800"
                     )}
                 >All Leads</button>
+                {userRole === 'super_admin' && (
+                    <button
+                        onClick={() => setView('coupons')}
+                        className={cn(
+                            "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all shrink-0",
+                            view === 'coupons' ? "bg-emerald-500 text-slate-950 border-emerald-500" : "text-slate-500 border-slate-800"
+                        )}
+                    >Coupons</button>
+                )}
             </div>
 
             <main className="space-y-6">
@@ -220,13 +270,13 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
 
                 {view === 'users' && (
                     <div className="space-y-3">
-                        {stats.recentUsers.map(u => (
+                        {(stats.recentUsers as any[]).map((u: any) => (
                             <div key={u.id} className="bg-slate-900/50 border border-slate-800/50 p-4 rounded-2xl flex items-center justify-between">
                                 <div className="min-w-0">
                                     <p className="text-[10px] font-bold text-white truncate">{u.email}</p>
                                     <p className="text-[8px] font-black text-slate-500 uppercase tracking-tighter mt-0.5">Joined {new Date(u.created_at).toLocaleDateString()}</p>
                                 </div>
-                                <div className={clsx(
+                                <div className={cn(
                                     "px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-widest",
                                     u.subscription_status === 'active' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-slate-800 text-slate-500"
                                 )}>
@@ -239,7 +289,7 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
 
                 {view === 'leads' && (
                     <div className="space-y-3">
-                        {stats.recentLeads.map(l => (
+                        {(stats.recentLeads as any[]).map((l: any) => (
                             <div key={l.id} className="bg-slate-900/50 border border-slate-800/50 p-4 rounded-2xl">
                                 <div className="flex justify-between items-start">
                                     <p className="text-[10px] font-bold text-white">{l.first_name} {l.last_name}</p>
@@ -250,13 +300,68 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
                         ))}
                     </div>
                 )}
+
+                {view === 'coupons' && (
+                    <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-300">
+                        {/* ... Generator form ... */}
+                        <div className="bg-slate-900 border border-emerald-500/20 rounded-3xl p-6 shadow-2xl space-y-4">
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">Generate New Discount</h3>
+                            <div className="space-y-4">
+                                <div className="flex gap-2">
+                                    <input
+                                        value={newCode}
+                                        onChange={(e) => setNewCode(e.target.value.toUpperCase())}
+                                        placeholder="CODE88"
+                                        className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm font-mono tracking-widest text-emerald-400 focus:outline-none focus:border-emerald-500/50"
+                                    />
+                                    <Button variant="ghost" className="border border-slate-800 rounded-xl" onClick={() => {
+                                        const c = Math.random().toString(36).substring(2, 10).toUpperCase();
+                                        setNewCode(c);
+                                    }}>
+                                        <Plus className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-[8px] font-black uppercase text-slate-500 mb-1 block tracking-widest">Bonus Scans</label>
+                                        <input type="number" value={bonusScans} onChange={(e) => setBonusScans(parseInt(e.target.value))} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[8px] font-black uppercase text-slate-500 mb-1 block tracking-widest">Uses</label>
+                                        <input type="number" value={maxUses} onChange={(e) => setMaxUses(parseInt(e.target.value))} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white" />
+                                    </div>
+                                </div>
+                                <Button className="w-full bg-emerald-500 text-slate-950 font-black rounded-xl h-12 uppercase tracking-widest text-[10px]" onClick={handleGenerateCoupon} disabled={!newCode || generating}>
+                                    {generating ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Create Discount'}
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Active Coupons</h3>
+                            {coupons.map((c: any) => (
+                                <div key={c.id} className="bg-slate-900/50 border border-slate-800/50 p-4 rounded-2xl flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-emerald-500/10 rounded-lg">
+                                            <Ticket className="w-4 h-4 text-emerald-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-mono font-bold text-white tracking-widest uppercase">{c.code}</p>
+                                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-tighter">+{c.bonus_scans} Scans • {c.current_uses}/{c.max_uses} used</p>
+                                        </div>
+                                    </div>
+                                    <Button variant="ghost" size="icon" className="text-slate-600 hover:text-red-400" onClick={() => handleDeleteCoupon(c.id)}>
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </main>
         </div>
     );
 }
-
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
