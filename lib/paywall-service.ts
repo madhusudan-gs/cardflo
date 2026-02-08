@@ -66,6 +66,11 @@ export async function canScan(userId: string): Promise<{ allowed: boolean; reaso
         const profile = await getUserProfile(userId);
         if (!profile) return { allowed: false, reason: 'error' };
 
+        // Super Admin Bypass: Always allow scans
+        if ((profile as any).is_admin) {
+            return { allowed: true };
+        }
+
         const tier = (profile.subscription_tier as SubscriptionTier) || 'starter';
         const config = PLAN_CONFIGS[tier];
 

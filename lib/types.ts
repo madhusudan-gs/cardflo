@@ -11,7 +11,8 @@ export type AppStatus =
     | "LEADS"
     | "PAYWALL"
     | "REFERRAL"
-    | "ADMIN";
+    | "ADMIN"
+    | "COUPON_ADMIN";
 
 export interface CardData {
     firstName: string;
