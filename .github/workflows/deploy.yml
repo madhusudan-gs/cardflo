@@ -54,7 +54,8 @@ jobs:
             set net:max-retries 10
             open -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER"
             
-            # Use basic mirror -R with forced upload (ignore-time handles overwrite)
-            mirror -R --ignore-time --delete --verbose ./out/ ./
+            # Use basic mirror -R with forced upload
+            # REMOVED --delete to prevent breaking active sessions with old cached HTML
+            mirror -R --ignore-time --verbose ./out/ ./
             quit
           EOF
