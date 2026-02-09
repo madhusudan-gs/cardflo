@@ -12,40 +12,55 @@ BEGIN
     END IF;
 END $$;
 
--- 2. Grant Access to Latest User (You)
+-- 2. Grant Access to Your Specific Email (Force both columns to be sure)
 UPDATE public.profiles 
 SET is_admin = true, is_super_admin = true 
-WHERE id = (SELECT id FROM auth.users ORDER BY created_at DESC LIMIT 1);
+WHERE email = 'madhusudan.gs@gmail.com';
 
--- 3. Update RLS Policies to be Resilient (Support both columns)
-DROP POLICY IF EXISTS "Admins can view all profiles" ON public.profiles;
-CREATE POLICY "Admins can view all profiles" ON public.profiles
-FOR SELECT USING (
-  (SELECT is_admin FROM public.profiles WHERE id = auth.uid()) = true
-  OR (SELECT is_super_admin FROM public.profiles WHERE id = auth.uid()) = true
-  OR (team_id IS NOT NULL AND team_id = (SELECT team_id FROM public.profiles WHERE id = auth.uid()))
-  OR id = auth.uid()
-);
+-- 3. Update RLS Policies to be Ultra-Resilient
+-- This ensures that if ANY of the admin flags are true, you get access.
+DO $$
+BEGIN
+    -- PROFILES
+    DROP POLICY IF EXISTS "Admins can view all profiles" ON public.profiles;
+    CREATE POLICY "Admins can view all profiles" ON public.profiles
+    FOR SELECT USING (
+      (SELECT is_admin FROM public.profiles WHERE id = auth.uid()) = true
+      OR (SELECT is_super_admin FROM public.profiles WHERE id = auth.uid()) = true
+      OR id = auth.uid()
+    );
 
-DROP POLICY IF EXISTS "Admins can view all teams" ON public.teams;
-CREATE POLICY "Admins can view all teams" ON public.teams
-FOR SELECT USING (
-  (SELECT is_admin FROM public.profiles WHERE id = auth.uid()) = true
-  OR (SELECT is_super_admin FROM public.profiles WHERE id = auth.uid()) = true
-  OR owner_id = auth.uid()
-);
+    -- TEAMS
+    DROP POLICY IF EXISTS "Admins can view all teams" ON public.teams;
+    CREATE POLICY "Admins can view all teams" ON public.teams
+    FOR SELECT USING (
+      (SELECT is_admin FROM public.profiles WHERE id = auth.uid()) = true
+      OR (SELECT is_super_admin FROM public.profiles WHERE id = auth.uid()) = true
+      OR owner_id = auth.uid()
+    );
 
-DROP POLICY IF EXISTS "Admins can view all team memberships" ON public.team_members;
-CREATE POLICY "Admins can view all team memberships" ON public.team_members
-FOR SELECT USING (
-  (SELECT is_admin FROM public.profiles WHERE id = auth.uid()) = true
-  OR (SELECT is_super_admin FROM public.profiles WHERE id = auth.uid()) = true
-  OR team_id IN (SELECT team_id FROM public.profiles WHERE id = auth.uid())
-);
+    -- TEAM_MEMBERS
+    DROP POLICY IF EXISTS "Admins can view all team memberships" ON public.team_members;
+    CREATE POLICY "Admins can view all team memberships" ON public.team_members
+    FOR SELECT USING (
+      (SELECT is_admin FROM public.profiles WHERE id = auth.uid()) = true
+      OR (SELECT is_super_admin FROM public.profiles WHERE id = auth.uid()) = true
+      OR team_id IN (SELECT team_id FROM public.profiles WHERE id = auth.uid())
+    );
+
+    -- COUPONS
+    DROP POLICY IF EXISTS "Admins can manage coupons" ON public.coupons;
+    CREATE POLICY "Admins can manage coupons" ON public.coupons
+    FOR ALL USING (
+      (SELECT is_admin FROM public.profiles WHERE id = auth.uid()) = true
+      OR (SELECT is_super_admin FROM public.profiles WHERE id = auth.uid()) = true
+    );
+END $$;
 
 -- 4. Reload Schema Cache
 NOTIFY pgrst, 'reload schema';
 
--- 5. Verification Check (Look at the output below in Supabase)
-SELECT id, email, is_admin, is_super_admin FROM public.profiles 
-WHERE is_admin = true OR is_super_admin = true;
+-- 5. FINAL CONFIRMATION (Run this and look at the results)
+SELECT id, email, is_admin, is_super_admin 
+FROM public.profiles 
+WHERE email = 'madhusudan.gs@gmail.com';
