@@ -51,6 +51,11 @@ export default function CardfloApp() {
         return () => subscription.unsubscribe();
     }, []);
 
+    const refreshUsage = async (userId: string) => {
+        const usage = await getUserUsage(userId);
+        if (usage) setUsageStats({ count: usage.scans_count || 0, bonus: usage.bonus_scans_remaining || 0 });
+    };
+
     // Fetch stats and paywall info whenever we return to IDLE
     useEffect(() => {
         if (status === "IDLE" && session?.user.id) {
@@ -65,16 +70,10 @@ export default function CardfloApp() {
                 const isSuper = (profile as any)?.is_super_admin === true;
                 const isAdminOld = (profile as any)?.is_admin === true;
 
-                console.log("Cardflo Debug: Session ID:", session.user.id);
-                console.log("Cardflo Debug: Profile Data:", profile);
-                console.log("Cardflo Debug: Admin Status:", { isSuper, isAdminOld });
-
                 if (isSuper || isAdminOld) {
                     setIsAdmin(true);
                     setUserRole('super_admin');
                 } else if (effectiveTeamId) {
-                    // Check if they are a Team Admin (owner or admin role)
-                    console.log("Cardflo Debug: Checking Team Admin for team:", effectiveTeamId);
                     const { data: memberData } = await supabase
                         .from('team_members')
                         .select('role')
@@ -94,9 +93,7 @@ export default function CardfloApp() {
                     setUserRole('none');
                 }
             });
-            getUserUsage(session.user.id).then(usage => {
-                if (usage) setUsageStats({ count: usage.scans_count || 0, bonus: usage.bonus_scans_remaining || 0 });
-            });
+            refreshUsage(session.user.id);
         }
     }, [status, session]);
 
@@ -297,7 +294,7 @@ export default function CardfloApp() {
                 onClose={() => setStatus("IDLE")}
                 onRedeemSuccess={() => {
                     if (session?.user.id) {
-                        fetchUsage(session.user.id);
+                        refreshUsage(session.user.id);
                     }
                 }}
             />
