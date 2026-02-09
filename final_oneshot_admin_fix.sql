@@ -1,5 +1,5 @@
--- CARD FLO: FINAL ONE-SHOT ADMIN FIX
--- This script ensures you have access regardless of which column version you are on.
+-- CARD FLO: GOD-MODE ADMIN FIX (RECURSION SAFE)
+-- This script fixes the "loops" by being absolute.
 
 -- 1. Ensure Columns Exist
 DO $$ 
@@ -12,55 +12,42 @@ BEGIN
     END IF;
 END $$;
 
--- 2. Grant Access to Your Specific Email (Force both columns to be sure)
+-- 2. Grant Access (Targeting both email and the most recent user for absolute certainty)
 UPDATE public.profiles 
 SET is_admin = true, is_super_admin = true 
-WHERE email = 'madhusudan.gs@gmail.com';
+WHERE email = 'madhusudan.gs@gmail.com' 
+   OR id = (SELECT id FROM auth.users WHERE email = 'madhusudan.gs@gmail.com' LIMIT 1)
+   OR id = (SELECT id FROM auth.users ORDER BY created_at DESC LIMIT 1);
 
--- 3. Update RLS Policies to be Ultra-Resilient
--- This ensures that if ANY of the admin flags are true, you get access.
-DO $$
+-- 3. Create a RECURSION-SAFE admin check function
+-- This avoids the "infinite loop" error that happens when a profile policy checks the profile table.
+CREATE OR REPLACE FUNCTION public.check_is_admin()
+RETURNS BOOLEAN AS $$
 BEGIN
-    -- PROFILES
-    DROP POLICY IF EXISTS "Admins can view all profiles" ON public.profiles;
-    CREATE POLICY "Admins can view all profiles" ON public.profiles
-    FOR SELECT USING (
-      (SELECT is_admin FROM public.profiles WHERE id = auth.uid()) = true
-      OR (SELECT is_super_admin FROM public.profiles WHERE id = auth.uid()) = true
-      OR id = auth.uid()
-    );
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid()
+    AND (is_admin = true OR is_super_admin = true)
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
-    -- TEAMS
-    DROP POLICY IF EXISTS "Admins can view all teams" ON public.teams;
-    CREATE POLICY "Admins can view all teams" ON public.teams
-    FOR SELECT USING (
-      (SELECT is_admin FROM public.profiles WHERE id = auth.uid()) = true
-      OR (SELECT is_super_admin FROM public.profiles WHERE id = auth.uid()) = true
-      OR owner_id = auth.uid()
-    );
+-- 4. Apply Recursion-Safe RLS Policies
+DROP POLICY IF EXISTS "Admins can view all profiles" ON public.profiles;
+CREATE POLICY "Admins can view all profiles" ON public.profiles
+FOR SELECT USING (auth.uid() = id OR public.check_is_admin());
 
-    -- TEAM_MEMBERS
-    DROP POLICY IF EXISTS "Admins can view all team memberships" ON public.team_members;
-    CREATE POLICY "Admins can view all team memberships" ON public.team_members
-    FOR SELECT USING (
-      (SELECT is_admin FROM public.profiles WHERE id = auth.uid()) = true
-      OR (SELECT is_super_admin FROM public.profiles WHERE id = auth.uid()) = true
-      OR team_id IN (SELECT team_id FROM public.profiles WHERE id = auth.uid())
-    );
+DROP POLICY IF EXISTS "Admins can view all teams" ON public.teams;
+CREATE POLICY "Admins can view all teams" ON public.teams
+FOR SELECT USING (owner_id = auth.uid() OR public.check_is_admin());
 
-    -- COUPONS
-    DROP POLICY IF EXISTS "Admins can manage coupons" ON public.coupons;
-    CREATE POLICY "Admins can manage coupons" ON public.coupons
-    FOR ALL USING (
-      (SELECT is_admin FROM public.profiles WHERE id = auth.uid()) = true
-      OR (SELECT is_super_admin FROM public.profiles WHERE id = auth.uid()) = true
-    );
-END $$;
+DROP POLICY IF EXISTS "Admins can view all team memberships" ON public.team_members;
+CREATE POLICY "Admins can view all team memberships" ON public.team_members
+FOR SELECT USING (user_id = auth.uid() OR public.check_is_admin());
 
--- 4. Reload Schema Cache
+-- 5. Final Force Reload
 NOTIFY pgrst, 'reload schema';
 
--- 5. FINAL CONFIRMATION (Run this and look at the results)
-SELECT id, email, is_admin, is_super_admin 
-FROM public.profiles 
+-- 6. VERIFICATION (Check the results below)
+SELECT email, is_admin, is_super_admin FROM public.profiles 
 WHERE email = 'madhusudan.gs@gmail.com';

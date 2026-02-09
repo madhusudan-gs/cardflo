@@ -46,14 +46,14 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
             // ... profile and lead fetching logic ...
             let profileQuery = supabase
                 .from('profiles')
-                .select('id, email, subscription_tier, subscription_status, created_at, team_id');
+                .select('id, email, subscription_tier, subscription_status, updated_at, team_id');
 
             if (userRole === 'team_admin' && teamId) {
                 profileQuery = profileQuery.eq('team_id', teamId);
             }
 
             const { data: profiles, error: pError } = await profileQuery
-                .order('created_at', { ascending: false });
+                .order('updated_at', { ascending: false });
 
             let leadCountQuery = supabase.from('leads').select('*', { count: 'exact', head: true });
             let recentLeadsQuery = supabase.from('leads').select('id, first_name, last_name, company, created_at, team_id');
@@ -274,7 +274,7 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
                             <div key={u.id} className="bg-slate-900/50 border border-slate-800/50 p-4 rounded-2xl flex items-center justify-between">
                                 <div className="min-w-0">
                                     <p className="text-[10px] font-bold text-white truncate">{u.email}</p>
-                                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-tighter mt-0.5">Joined {new Date(u.created_at).toLocaleDateString()}</p>
+                                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-tighter mt-0.5">Updated {new Date(u.updated_at).toLocaleDateString()}</p>
                                 </div>
                                 <div className={cn(
                                     "px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-widest",
