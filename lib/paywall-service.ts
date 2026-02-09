@@ -125,3 +125,22 @@ export async function incrementUsage(userId: string) {
             } as any);
     }
 }
+
+export async function redeemCoupon(userId: string, code: string): Promise<{ success: boolean; message: string; bonus_scans?: number }> {
+    try {
+        const { data, error } = await (supabase.rpc as any)('redeem_coupon', {
+            coupon_code: code,
+            target_user_id: userId
+        });
+
+        if (error) {
+            console.error('Coupon redemption error:', error);
+            return { success: false, message: error.message };
+        }
+
+        return data as { success: boolean; message: string; bonus_scans?: number };
+    } catch (err: any) {
+        console.error('Coupon redemption catch:', err);
+        return { success: false, message: 'Unexpected error during redemption' };
+    }
+}

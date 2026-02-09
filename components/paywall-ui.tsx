@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from './ui/shared';
-import { Zap, Check, Share2, AlertTriangle, ShieldCheck, Users, Globe, Loader2 } from 'lucide-react';
-import { SubscriptionTier, PLAN_CONFIGS } from '@/lib/paywall-service';
+import { Zap, Check, Share2, AlertTriangle, ShieldCheck, Users, Globe, Loader2, Ticket } from 'lucide-react';
+import { SubscriptionTier, PLAN_CONFIGS, redeemCoupon } from '@/lib/paywall-service';
 
 interface PaywallUIProps {
     currentTier: SubscriptionTier;
@@ -11,11 +11,14 @@ interface PaywallUIProps {
     userId: string;
     email: string;
     onClose?: () => void;
+    onRedeemSuccess?: () => void;
 }
 
-export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, onClose }: PaywallUIProps) {
+export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, onClose, onRedeemSuccess }: PaywallUIProps) {
     const [currency, setCurrency] = useState<'USD' | 'INR'>('INR');
     const [loading, setLoading] = useState<string | null>(null);
+    const [couponCode, setCouponCode] = useState("");
+    const [couponLoading, setCouponLoading] = useState(false);
 
     const config = PLAN_CONFIGS[currentTier];
     const totalLimit = config.scanLimit + bonusScans;
@@ -98,11 +101,27 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
                 const rzp = new (window as any).Razorpay(options);
                 rzp.open();
             }
-        } catch (err: any) {
-            console.error('Checkout error:', err);
-            alert(`Checkout failed: ${err.message}`);
         } finally {
             setLoading(null);
+        }
+    };
+
+    const handleRedeem = async () => {
+        if (!couponCode) return;
+        setCouponLoading(true);
+        try {
+            const result = await (redeemCoupon as any)(userId, couponCode);
+            if (result.success) {
+                alert(`Success! You've received ${result.bonus_scans} bonus scans.`);
+                setCouponCode("");
+                if (onRedeemSuccess) onRedeemSuccess();
+            } else {
+                alert(result.message);
+            }
+        } catch (err) {
+            alert("Failed to redeem coupon.");
+        } finally {
+            setCouponLoading(false);
         }
     };
 
@@ -205,6 +224,32 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
                             </Button>
                         </div>
                     ))}
+                </div>
+
+                {/* Coupon Section */}
+                <div className="glass-panel p-8 rounded-[2rem] border-slate-800 bg-slate-900/30">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div className="space-y-1 text-center md:text-left">
+                            <h3 className="text-sm font-black uppercase tracking-widest text-emerald-400">Have a coupon?</h3>
+                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Enter your code below for bonus scans.</p>
+                        </div>
+                        <div className="flex w-full md:w-auto gap-2">
+                            <input
+                                type="text"
+                                value={couponCode}
+                                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                                placeholder="ENTER CODE"
+                                className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs font-black uppercase tracking-widest focus:border-emerald-500 transition-all outline-none w-full md:w-48"
+                            />
+                            <Button
+                                onClick={handleRedeem}
+                                disabled={!couponCode || couponLoading}
+                                className="bg-emerald-500 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/10 min-w-[100px]"
+                            >
+                                {couponLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Redeem'}
+                            </Button>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="text-center">

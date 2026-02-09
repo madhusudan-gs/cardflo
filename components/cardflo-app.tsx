@@ -295,6 +295,11 @@ export default function CardfloApp() {
                 userId={session?.user.id || ''}
                 email={session?.user.email || ''}
                 onClose={() => setStatus("IDLE")}
+                onRedeemSuccess={() => {
+                    if (session?.user.id) {
+                        fetchUsage(session.user.id);
+                    }
+                }}
             />
         );
     }
