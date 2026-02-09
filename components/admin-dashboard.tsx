@@ -43,73 +43,44 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
 
     useEffect(() => {
         const fetchAdminStats = async () => {
-            // ... profile and lead fetching logic ...
-            let profileQuery = supabase
-                .from('profiles')
-                .select('id, email, subscription_tier, subscription_status, updated_at, team_id');
+            setLoading(true);
+            try {
+                // Use the new RPC function to bypass RLS issues
+                const { data, error } = await supabase.rpc('get_admin_summary');
 
-            if (userRole === 'team_admin' && teamId) {
-                profileQuery = profileQuery.eq('team_id', teamId);
-            }
+                if (error) {
+                    console.error("Cardflo Debug: RPC Stats Error:", error);
+                    // Fallback to manual check if RPC fails (e.g. not created yet)
+                    return;
+                }
 
-            const { data: profiles, error: pError } = await profileQuery
-                .order('updated_at', { ascending: false });
+                if (data) {
+                    const statsData = data as any;
+                    setStats({
+                        totalUsers: statsData.totalUsers || 0,
+                        totalLeads: statsData.totalLeads || 0,
+                        activeSubscriptions: statsData.activeSubscriptions || 0,
+                        conversionRate: statsData.totalUsers ? Math.round((statsData.activeSubscriptions / statsData.totalUsers) * 100) : 0,
+                        planBreakdown: statsData.planBreakdown || {},
+                        estimatedMRR: statsData.estimatedMRR || 0,
+                        recentUsers: statsData.recentUsers || [],
+                        recentLeads: statsData.recentLeads || []
+                    });
 
-            let leadCountQuery = supabase.from('leads').select('*', { count: 'exact', head: true });
-            let recentLeadsQuery = supabase.from('leads').select('id, first_name, last_name, company, created_at, team_id');
-
-            if (userRole === 'team_admin' && teamId) {
-                leadCountQuery = leadCountQuery.eq('team_id', teamId);
-                recentLeadsQuery = recentLeadsQuery.eq('team_id', teamId);
-            }
-
-            const { count: leadCount } = await leadCountQuery;
-            const { data: recentLeads } = await recentLeadsQuery
-                .order('created_at', { ascending: false })
-                .limit(10);
-
-            if (profiles) {
-                const breakdown: Record<string, number> = {
-                    starter: 0, lite: 0, standard: 0, pro: 0, team: 0
-                };
-                let activeCount = 0;
-                let mrr = 0;
-
-                const pricing: Record<string, number> = {
-                    starter: 0, lite: 9, standard: 19, pro: 49, team: 99
-                };
-
-                (profiles as any[]).forEach(p => {
-                    const tier = p.subscription_tier || 'starter';
-                    breakdown[tier] = (breakdown[tier] || 0) + 1;
-                    if (p.subscription_status === 'active') {
-                        activeCount++;
-                        mrr += pricing[tier] || 0;
+                    // If super_admin, also fetch coupons (keep this separate for now)
+                    if (userRole === 'super_admin') {
+                        const { data: couponData } = await supabase
+                            .from('coupons')
+                            .select('*')
+                            .order('created_at', { ascending: false });
+                        if (couponData) setCoupons(couponData);
                     }
-                });
-
-                setStats({
-                    totalUsers: profiles.length,
-                    totalLeads: leadCount || 0,
-                    activeSubscriptions: activeCount,
-                    conversionRate: profiles.length ? Math.round((activeCount / profiles.length) * 100) : 0,
-                    planBreakdown: breakdown,
-                    estimatedMRR: mrr,
-                    recentUsers: profiles.slice(0, 10),
-                    recentLeads: recentLeads || []
-                });
+                }
+            } catch (err) {
+                console.error("Cardflo Debug: Fetch Stats Crash:", err);
+            } finally {
+                setLoading(false);
             }
-
-            // If super_admin, also fetch coupons
-            if (userRole === 'super_admin') {
-                const { data: couponData } = await supabase
-                    .from('coupons')
-                    .select('*')
-                    .order('created_at', { ascending: false });
-                if (couponData) setCoupons(couponData);
-            }
-
-            setLoading(false);
         };
 
         fetchAdminStats();
