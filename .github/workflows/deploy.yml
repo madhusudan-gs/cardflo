@@ -32,16 +32,38 @@ jobs:
 
       - name: Prepare Deploy Directory
         run: |
-          # Copy build output to a non-gitignored directory
           mkdir -p deploy
           cp -r out/* deploy/
           cp public/.htaccess deploy/ || true
           echo "Build Success: $(date)" > deploy/deploy-check.txt
           echo "COMMIT: ${{ github.sha }}" >> deploy/deploy-check.txt
           echo "=== Deploy directory contents ==="
-          ls -la deploy/
-          echo "=== _next directory ==="
-          ls -la deploy/_next/ || true
+          find deploy -maxdepth 2 -type f | head -30
+
+      - name: Discover FTP Directory Structure
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          echo "=== Listing FTP root ==="
+          curl -s --ftp-ssl --insecure --list-only "ftp://$FTP_SERVER/" --user "$FTP_USERNAME:$FTP_PASSWORD" || echo "FAILED to list root"
+          
+          echo ""
+          echo "=== Trying /public_html/ ==="
+          curl -s --ftp-ssl --insecure --list-only "ftp://$FTP_SERVER/public_html/" --user "$FTP_USERNAME:$FTP_PASSWORD" || echo "No public_html"
+          
+          echo ""
+          echo "=== Trying /domains/ ==="
+          curl -s --ftp-ssl --insecure --list-only "ftp://$FTP_SERVER/domains/" --user "$FTP_USERNAME:$FTP_PASSWORD" || echo "No domains dir"
+          
+          echo ""
+          echo "=== Trying /domains/cardflo.app/ ==="
+          curl -s --ftp-ssl --insecure --list-only "ftp://$FTP_SERVER/domains/cardflo.app/" --user "$FTP_USERNAME:$FTP_PASSWORD" || echo "No domains/cardflo.app"
+          
+          echo ""
+          echo "=== Trying /domains/cardflo.app/public_html/ ==="
+          curl -s --ftp-ssl --insecure --list-only "ftp://$FTP_SERVER/domains/cardflo.app/public_html/" --user "$FTP_USERNAME:$FTP_PASSWORD" || echo "No domains/cardflo.app/public_html"
 
       - name: Deploy to Hostinger via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
