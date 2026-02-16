@@ -48,20 +48,25 @@ jobs:
         run: |
           sudo apt-get install -y lftp
           lftp <<EOF
-            set ftp:ssl-allow no
+            set ftp:ssl-allow yes
+            set ftp:ssl-force yes
+            set ssl:verify-certificate no
             set ftp:passive-mode true
             set ftp:list-options -a
-            set net:timeout 60
-            set net:max-retries 10
+            set net:timeout 30
+            set net:max-retries 3
+            set net:reconnect-interval-base 5
             open -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER"
             
+            # Verify connection works before uploading
+            echo "Testing connection..."
+            ls
+            
             # PHASE 1: Upload assets FIRST (_next folder)
-            # This ensures that when index.html is updated later, the CSS/JS hashes it needs are already there.
             echo "Uploading assets..."
             mirror -R --ignore-time --verbose ./out/_next/ ./_next/
 
             # PHASE 2: Upload everything else (HTML, .htaccess, manifest)
-            # We do NOT use --delete to keep old hashed assets for active users.
             echo "Uploading root files..."
             mirror -R --ignore-time --exclude _next/ --verbose ./out/ ./
             
