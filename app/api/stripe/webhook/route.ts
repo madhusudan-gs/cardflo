@@ -11,13 +11,11 @@ export async function POST(req: Request) {
 
     try {
         if (!signature || !process.env.STRIPE_WEBHOOK_SECRET) {
-            // Log warning but proceed if in dev/placeholder mode?
-            // For production, verification is MANDATORY.
-            console.warn('Stripe webhook signature verification skipped (Missing SECRET)');
-            event = JSON.parse(body);
-        } else {
-            event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET);
+            console.error('Stripe webhook rejected: Missing signature or STRIPE_WEBHOOK_SECRET');
+            return NextResponse.json({ error: 'Webhook verification not configured' }, { status: 500 });
         }
+
+        event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET);
     } catch (err: any) {
         console.error('Stripe Webhook Signature Verification Failed:', err.message);
         return NextResponse.json({ error: 'Webhook Error' }, { status: 400 });
@@ -27,8 +25,8 @@ export async function POST(req: Request) {
         switch (event.type) {
             case 'checkout.session.completed': {
                 const session = event.data.object;
-                const userId = session.metadata.userId;
-                const tier = session.metadata.tier as SubscriptionTier;
+                const userId = session.metadata?.userId;
+                const tier = session.metadata?.tier as SubscriptionTier;
 
                 if (userId && tier) {
                     await handleSubscriptionUpdated({
@@ -57,7 +55,7 @@ export async function POST(req: Request) {
                         customerReference: subscription.customer as string,
                         subscriptionReference: subscription.id,
                         provider: 'stripe',
-                        billingCycleEnd: new Date(subscription.current_period_end * 1000).toISOString()
+                        billingCycleEnd: new Date((subscription as any).current_period_end * 1000).toISOString()
                     });
                 }
                 break;

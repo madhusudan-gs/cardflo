@@ -14,7 +14,6 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
     const detectionCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
     const streamRef = useRef<MediaStream | null>(null);
-    const [stream, setStream] = useState<MediaStream | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [status, setStatus] = useState<"IDLE" | "DETECTING" | "STEADY" | "CAPTURING">("IDLE");
 
@@ -30,7 +29,6 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
             console.log("Scanner: Stopping camera tracks");
             streamRef.current.getTracks().forEach((track) => track.stop());
             streamRef.current = null;
-            setStream(null);
         }
     }, []);
 
@@ -53,7 +51,6 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
                 },
             });
             streamRef.current = mediaStream;
-            setStream(mediaStream);
             if (videoRef.current) {
                 videoRef.current.srcObject = mediaStream;
             }

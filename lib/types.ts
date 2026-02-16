@@ -4,15 +4,12 @@ export type AppStatus =
     | "SCANNING"
     | "EXTRACTING"
     | "REVIEWING"
-    | "DUPLICATE_FOUND"
-    | "CHECKING"
     | "SAVING"
     | "SUCCESS"
     | "LEADS"
     | "PAYWALL"
     | "REFERRAL"
-    | "ADMIN"
-    | "COUPON_ADMIN";
+    | "ADMIN";
 
 export interface CardData {
     firstName: string;

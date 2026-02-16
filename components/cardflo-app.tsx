@@ -13,7 +13,7 @@ import { ReviewScreen } from "@/components/review-screen";
 import { LeadsScreen } from "@/components/leads-screen";
 import { PaywallUI } from "@/components/paywall-ui";
 import { Button } from "@/components/ui/shared";
-import { Loader2, Zap, LogOut, Database, CreditCard, Gift, ShieldCheck, Ticket } from "lucide-react";
+import { Loader2, Zap, LogOut, Database, CreditCard, Gift, ShieldCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
 import { SubscriptionTier, getUserUsage, getUserProfile } from "@/lib/paywall-service";
@@ -301,18 +301,6 @@ export default function CardfloApp() {
         );
     }
 
-    if (status === "CHECKING") {
-        return (
-            <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center space-y-8">
-                <div className="w-16 h-16 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
-                <div className="space-y-2">
-                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Integrity Check...</h3>
-                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Scanning database for duplicates</p>
-                </div>
-            </div>
-        );
-    }
-
     if (status === "SAVING") {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950">
@@ -334,39 +322,6 @@ export default function CardfloApp() {
         );
     }
 
-    if (status === "DUPLICATE_FOUND" && currentCard) {
-        return (
-            <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
-                <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center mb-6 border border-amber-500/20 animate-pulse">
-                    <Database className="w-10 h-10 text-amber-400" />
-                </div>
-                <h2 className="text-3xl font-black text-white tracking-tighter mb-2 uppercase">Duplicate Found</h2>
-                <p className="text-slate-400 max-w-xs mb-8">
-                    A lead with this email or name already exists in your database. What would you like to do?
-                </p>
-                <div className="flex flex-col gap-3 w-full max-w-xs">
-                    <Button
-                        size="lg"
-                        className="h-16 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-2xl"
-                        onClick={() => {
-                            setIsIgnoringDuplicate(true);
-                            handleSave(currentCard);
-                        }}
-                    >
-                        Ignore and Add
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        size="lg"
-                        className="h-16 text-slate-400 hover:text-white"
-                        onClick={() => setStatus("REVIEWING")}
-                    >
-                        Cancel Adding
-                    </Button>
-                </div>
-            </div>
-        );
-    }
 
     // IDLE Dashboard
     return (

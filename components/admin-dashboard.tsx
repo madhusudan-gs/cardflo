@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
 import { Button } from "./ui/shared";
 import { ChevronLeft, Users, Database, CreditCard, Activity, Loader2, Ticket, Plus, Trash2 } from "lucide-react";
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
 
 export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
     onBack: () => void,
@@ -332,8 +331,4 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
             </main>
         </div>
     );
-}
-
-function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs));
 }

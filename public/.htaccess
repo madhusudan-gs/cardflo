@@ -1,29 +1,43 @@
-# CARD FLO: ROBUST STATIC EXPORT CONFIG
+# FINAL NO-FAIL CONFIG FOR CARDFLO
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
 
-  # 1. Force HTTPS (Optional but recommended)
-  # RewriteCond %{HTTPS} off
-  # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-
-  # 2. Handle trailing slashes (Next.js trailingSlash: true)
-  # If a file exists with .html extension, serve it
+  # 1. MIME TYPES & ENCODING
+  AddType text/css .css
+  AddType application/javascript .js
+  AddType image/svg+xml .svg
+  AddType application/json .json
+  
+  # 2. PREVENT SPA FALLBACK FOR STATIC ASSETS
+  # If a file in _next or a known asset type is missing, return a REAL 404.
+  # This prevents "Resource interpreted as Stylesheet but transferred with MIME type text/html" errors.
+  RewriteCond %{REQUEST_URI} ^/_next/ [OR]
+  RewriteCond %{REQUEST_URI} \.(css|js|png|jpg|jpeg|gif|ico|svg|json|webp|woff|woff2|ttf|otf)$
   RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME}.html -f
-  RewriteRule ^(.*)$ $1.html [L]
+  RewriteRule . - [R=404,L]
 
-  # 3. Fallback to index.html for unknown routes (SPA behavior)
+  # 3. SPA ROUTING
+  # Support single-page application navigation (everything falls back to index)
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule . /index.html [L]
 </IfModule>
 
-# 4. Cache Control for hashed assets (Permanent Fix for blinking UI)
+# 4. CACHE CONTROL
 <IfModule mod_expires.c>
   ExpiresActive On
-  ExpiresDefault "access plus 1 month"
+  
+  # DO NOT CACHE HTML (Ensures users always see the latest version)
   ExpiresByType text/html "access plus 0 seconds"
+  
+  # CACHE HASHED ASSETS PERMANENTLY (Since hashes change on every update)
   ExpiresByType application/javascript "access plus 1 year"
   ExpiresByType text/css "access plus 1 year"
+  ExpiresByType image/x-icon "access plus 1 month"
+</IfModule>
+
+# 5. SECURITY & MIME FIXES
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
 </IfModule>

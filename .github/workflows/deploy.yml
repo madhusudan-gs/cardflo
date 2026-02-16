@@ -50,12 +50,20 @@ jobs:
           lftp <<EOF
             set ftp:ssl-allow no
             set ftp:passive-mode true
+            set ftp:list-options -a
             set net:timeout 60
             set net:max-retries 10
             open -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER"
             
-            # Use basic mirror -R with forced upload
-            # REMOVED --delete to prevent breaking active sessions with old cached HTML
-            mirror -R --ignore-time --verbose ./out/ ./
+            # PHASE 1: Upload assets FIRST (_next folder)
+            # This ensures that when index.html is updated later, the CSS/JS hashes it needs are already there.
+            echo "Uploading assets..."
+            mirror -R --ignore-time --verbose ./out/_next/ ./_next/
+
+            # PHASE 2: Upload everything else (HTML, .htaccess, manifest)
+            # We do NOT use --delete to keep old hashed assets for active users.
+            echo "Uploading root files..."
+            mirror -R --ignore-time --exclude _next/ --verbose ./out/ ./
+            
             quit
           EOF

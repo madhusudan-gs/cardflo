@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from './ui/shared';
-import { Zap, Check, Share2, AlertTriangle, ShieldCheck, Users, Globe, Loader2, Ticket } from 'lucide-react';
+import { Zap, Check, AlertTriangle, Loader2 } from 'lucide-react';
 import { SubscriptionTier, PLAN_CONFIGS, redeemCoupon } from '@/lib/paywall-service';
 
 interface PaywallUIProps {
@@ -101,6 +101,9 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
                 const rzp = new (window as any).Razorpay(options);
                 rzp.open();
             }
+        } catch (err: any) {
+            console.error('Payment upgrade error:', err);
+            alert(`Upgrade failed: ${err.message || 'Please try again.'}`);
         } finally {
             setLoading(null);
         }
@@ -130,9 +133,12 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
         const script = document.createElement('script');
         script.src = 'https://checkout.razorpay.com/v1/checkout.js';
         script.async = true;
+        script.onerror = () => console.error('Failed to load Razorpay SDK script.');
         document.body.appendChild(script);
         return () => {
-            document.body.removeChild(script);
+            if (document.body.contains(script)) {
+                document.body.removeChild(script);
+            }
         };
     }, []);
 
