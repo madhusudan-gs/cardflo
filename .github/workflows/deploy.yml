@@ -14,9 +14,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: De-git Repository
-        run: rm -rf .git # Removes all git metadata to prevent Error 128 in any subsequent step
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -40,35 +37,14 @@ jobs:
           echo "COMMIT: ${{ github.sha }}" >> out/deploy-check.txt
           cp public/.htaccess out/ || true
 
-      - name: Deploy to Hostinger (Final Cleanup Sync)
-        env:
-          FTP_SERVER: ${{ secrets.FTP_SERVER }}
-          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
-          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-        run: |
-          sudo apt-get install -y lftp
-          lftp <<EOF
-            set ftp:ssl-allow yes
-            set ftp:ssl-force yes
-            set ssl:verify-certificate no
-            set ftp:passive-mode true
-            set ftp:list-options -a
-            set net:timeout 30
-            set net:max-retries 3
-            set net:reconnect-interval-base 5
-            open -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER"
-            
-            # Verify connection works before uploading
-            echo "Testing connection..."
-            ls
-            
-            # PHASE 1: Upload assets FIRST (_next folder)
-            echo "Uploading assets..."
-            mirror -R --ignore-time --verbose ./out/_next/ ./_next/
-
-            # PHASE 2: Upload everything else (HTML, .htaccess, manifest)
-            echo "Uploading root files..."
-            mirror -R --ignore-time --exclude _next/ --verbose ./out/ ./
-            
-            quit
-          EOF
+      - name: Deploy to Hostinger via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./out/
+          server-dir: /
+          protocol: ftps
+          port: 21
+          timeout: 60000
