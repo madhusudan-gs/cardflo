@@ -1,8 +1,5 @@
 // Razorpay Checkout Edge Function
-// Deploy this via Supabase Dashboard → Edge Functions → New Function → "razorpay-checkout"
-
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// Deploy via Supabase Dashboard → Edge Functions → "razorpay-checkout"
 
 const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
@@ -17,7 +14,7 @@ const PLAN_IDS: Record<string, string> = {
     team: Deno.env.get("RAZORPAY_PLAN_TEAM") || "",
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
     // Handle CORS preflight
     if (req.method === "OPTIONS") {
         return new Response("ok", { headers: corsHeaders });
@@ -90,7 +87,7 @@ serve(async (req) => {
                 headers: { ...corsHeaders, "Content-Type": "application/json" },
             }
         );
-    } catch (error: any) {
+    } catch (error) {
         console.error("Razorpay checkout error:", error);
         return new Response(JSON.stringify({ error: error.message || "Internal Server Error" }), {
             status: 500,
