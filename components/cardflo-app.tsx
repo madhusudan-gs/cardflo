@@ -13,7 +13,7 @@ import { ReviewScreen } from "@/components/review-screen";
 import { LeadsScreen } from "@/components/leads-screen";
 import { PaywallUI } from "@/components/paywall-ui";
 import { Button } from "@/components/ui/shared";
-import { Loader2, Zap, LogOut, Database, CreditCard, Gift, ShieldCheck } from "lucide-react";
+import { Loader2, Zap, LogOut, Database, CreditCard, Gift, ShieldCheck, ChevronDown } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
 import { SubscriptionTier, getUserUsage, getUserProfile } from "@/lib/paywall-service";
@@ -33,6 +33,17 @@ export default function CardfloApp() {
     const [isAdmin, setIsAdmin] = useState(false);
     const [userRole, setUserRole] = useState<'super_admin' | 'team_admin' | 'none'>('none');
     const [teamId, setTeamId] = useState<string | null>(null);
+    const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+    const faqItems = [
+        { q: 'What is Cardflo?', a: 'Cardflo is a professional web app that helps you capture and organize business card information into structured, usable contacts — quickly and without friction.' },
+        { q: 'Why does Cardflo have scan limits?', a: 'Cardflo uses AI processing for every scan. Plans are structured to reflect usage and keep the platform sustainable for everyone. Clear limits ensure transparency and no surprise charges.' },
+        { q: 'What happens when I reach my monthly limit?', a: 'Your scans reset automatically at the beginning of your next billing cycle. You can also upgrade your plan anytime.' },
+        { q: 'Is my data private?', a: 'Yes. Your contacts belong to you. Cardflo does not sell or share user data.' },
+        { q: 'Why is the free plan limited?', a: 'The free plan is designed for occasional use. Paid plans help cover infrastructure and AI processing costs while keeping Cardflo independent and sustainable.' },
+        { q: 'What is the Team plan?', a: 'The Team plan allows multiple users to scan into a shared contact database, suitable for small teams and organizations.' },
+        { q: 'Do you offer special access for early users?', a: 'Yes. We occasionally provide Founder access codes for early supporters and contributors.' },
+    ];
 
     useEffect(() => {
         // Check active session
@@ -402,6 +413,28 @@ export default function CardfloApp() {
                         </Button>
                     </div>
                 )}
+
+                {/* FAQ Section */}
+                <div className="w-full max-w-2xl mt-12 space-y-3">
+                    <h3 className="text-sm font-black uppercase tracking-widest text-emerald-400 text-center mb-6">Frequently Asked Questions</h3>
+                    {faqItems.map((item, i) => (
+                        <div
+                            key={i}
+                            className="glass-panel rounded-2xl border border-slate-800 overflow-hidden transition-all duration-300 hover:border-slate-700"
+                        >
+                            <button
+                                onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                                className="w-full flex items-center justify-between p-5 text-left"
+                            >
+                                <span className="text-sm font-bold text-white pr-4">{item.q}</span>
+                                <ChevronDown className={`w-4 h-4 text-emerald-400 flex-shrink-0 transition-transform duration-300 ${openFaq === i ? 'rotate-180' : ''}`} />
+                            </button>
+                            <div className={`overflow-hidden transition-all duration-300 ${openFaq === i ? 'max-h-40 pb-5' : 'max-h-0'}`}>
+                                <p className="px-5 text-xs text-slate-400 leading-relaxed">{item.a}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
 
                 <div className="mt-8 opacity-20 text-[8px] font-mono tracking-widest uppercase">
                     Build: v3.0.NUCLEAR-SYNC

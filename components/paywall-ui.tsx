@@ -240,6 +240,12 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
                     ))}
                 </div>
 
+                {/* Sustainability Note */}
+                <div className="text-center max-w-lg mx-auto space-y-1">
+                    <p className="text-xs text-slate-500 leading-relaxed">Cardflo is built as a self-sustaining tool.</p>
+                    <p className="text-xs text-slate-500 leading-relaxed">Plans are priced to cover infrastructure and AI processing costs while keeping the product accessible and independent.</p>
+                </div>
+
                 {/* Coupon Section */}
                 <div className="glass-panel p-8 rounded-[2rem] border-slate-800 bg-slate-900/30">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-6">
