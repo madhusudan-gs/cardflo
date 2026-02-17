@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from './ui/shared';
-import { Zap, Check, AlertTriangle, Loader2 } from 'lucide-react';
-import { SubscriptionTier, PLAN_CONFIGS, redeemCoupon } from '@/lib/paywall-service';
+import { Zap, Check, AlertTriangle, Loader2, ArrowLeft } from 'lucide-react';
+import { SubscriptionTier, PLAN_CONFIGS } from '@/lib/paywall-service';
 
 interface PaywallUIProps {
     currentTier: SubscriptionTier;
@@ -17,8 +17,7 @@ interface PaywallUIProps {
 export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, onClose, onRedeemSuccess }: PaywallUIProps) {
     const [currency, setCurrency] = useState<'USD' | 'INR'>('INR');
     const [loading, setLoading] = useState<string | null>(null);
-    const [couponCode, setCouponCode] = useState("");
-    const [couponLoading, setCouponLoading] = useState(false);
+
 
     const config = PLAN_CONFIGS[currentTier];
     const totalLimit = config.scanLimit + bonusScans;
@@ -122,24 +121,7 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
         }
     };
 
-    const handleRedeem = async () => {
-        if (!couponCode) return;
-        setCouponLoading(true);
-        try {
-            const result = await (redeemCoupon as any)(userId, couponCode);
-            if (result.success) {
-                alert(`Success! You've received ${result.bonus_scans} bonus scans.`);
-                setCouponCode("");
-                if (onRedeemSuccess) onRedeemSuccess();
-            } else {
-                alert(result.message);
-            }
-        } catch (err) {
-            alert("Failed to redeem coupon.");
-        } finally {
-            setCouponLoading(false);
-        }
-    };
+
 
     // Load Razorpay Script
     useEffect(() => {
@@ -196,10 +178,11 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
                             INR
                         </button>
                         <button
-                            onClick={() => setCurrency('USD')}
-                            className={`px-5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${currency === 'USD' ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+                            disabled
+                            className="px-5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-600 cursor-not-allowed relative group"
                         >
                             USD
+                            <span className="absolute -top-5 left-1/2 -translate-x-1/2 bg-slate-800 text-[8px] text-slate-400 px-2 py-0.5 rounded-full whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Coming Soon</span>
                         </button>
                     </div>
                 </div>
@@ -248,35 +231,11 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
                 {/* Sustainability Note */}
                 <p className="text-center text-xs text-slate-500 leading-relaxed max-w-lg mx-auto">Cardflo is self-sustaining. Plans are priced to cover infrastructure and AI costs while keeping the product accessible.</p>
 
-                {/* Coupon Section */}
-                <div className="glass-panel p-8 rounded-[2rem] border-slate-800 bg-slate-900/30">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                        <div className="space-y-1 text-center md:text-left">
-                            <h3 className="text-sm font-black uppercase tracking-widest text-emerald-400">Have a coupon?</h3>
-                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Enter your code below for bonus scans.</p>
-                        </div>
-                        <div className="flex w-full md:w-auto gap-2">
-                            <input
-                                type="text"
-                                value={couponCode}
-                                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                                placeholder="ENTER CODE"
-                                className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs font-black uppercase tracking-widest focus:border-emerald-500 transition-all outline-none w-full md:w-48"
-                            />
-                            <Button
-                                onClick={handleRedeem}
-                                disabled={!couponCode || couponLoading}
-                                className="bg-emerald-500 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/10 min-w-[100px]"
-                            >
-                                {couponLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Redeem'}
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-
+                {/* Back to Home */}
                 <div className="text-center">
-                    <Button variant="ghost" onClick={onClose} className="text-slate-500 hover:text-white text-[10px] font-black uppercase tracking-widest">
-                        Continue with basic version
+                    <Button variant="ghost" onClick={onClose} className="text-slate-400 hover:text-white text-[10px] font-black uppercase tracking-widest gap-1.5">
+                        <ArrowLeft className="w-3.5 h-3.5" />
+                        Back to Home
                     </Button>
                 </div>
             </div>
