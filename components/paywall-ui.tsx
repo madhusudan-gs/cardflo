@@ -156,21 +156,22 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
     }, []);
 
     return (
-        <div className="min-h-screen bg-slate-950 text-white p-3 pb-20 overflow-y-auto scrollbar-hide">
-            <div className="max-w-5xl mx-auto space-y-2">
+        <div className="min-h-screen bg-slate-950 text-white p-4 pb-20 overflow-y-auto scrollbar-hide">
+            <div className="max-w-5xl mx-auto space-y-3">
                 {/* Usage Panel */}
-                <div className="glass-panel p-3 rounded-xl border-emerald-500/20 bg-emerald-500/5 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/10 blur-[50px] rounded-full" />
-                    <div className="flex justify-between items-center mb-1.5">
+                <div className="glass-panel p-4 rounded-2xl border-emerald-500/20 bg-emerald-500/5 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 blur-[60px] rounded-full" />
+                    <div className="flex justify-between items-end mb-2">
                         <div>
-                            <p className="text-lg font-black">{usageCount} / {totalLimit} <span className="text-[9px] text-slate-500 uppercase">scans used</span></p>
+                            <h2 className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-0.5">Current Usage</h2>
+                            <p className="text-2xl font-black">{usageCount} / {totalLimit} <span className="text-[10px] text-slate-500 uppercase">Scans Used</span></p>
                         </div>
                         <div className="text-right">
                             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Active: {currentTier}</span>
                         </div>
                     </div>
 
-                    <div className="h-2.5 bg-slate-900 rounded-full border border-slate-800 overflow-hidden p-0.5">
+                    <div className="h-3 bg-slate-900 rounded-full border border-slate-800 overflow-hidden p-0.5">
                         <div
                             className={`h-full rounded-full transition-all duration-1000 ${isAtLimit ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-gradient-to-r from-emerald-600 to-cyan-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]'}`}
                             style={{ width: `${usagePercent}%` }}
@@ -187,16 +188,16 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
 
                 {/* Currency Selector */}
                 <div className="flex justify-center">
-                    <div className="bg-slate-900 p-0.5 rounded-lg flex border border-slate-800">
+                    <div className="bg-slate-900 p-0.5 rounded-xl flex border border-slate-800">
                         <button
                             onClick={() => setCurrency('INR')}
-                            className={`px-3 py-1 rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${currency === 'INR' ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+                            className={`px-5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${currency === 'INR' ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
                         >
                             INR
                         </button>
                         <button
                             onClick={() => setCurrency('USD')}
-                            className={`px-3 py-1 rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${currency === 'USD' ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+                            className={`px-5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${currency === 'USD' ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
                         >
                             USD
                         </button>
@@ -208,7 +209,7 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
                     {plans.map((plan) => (
                         <div
                             key={plan.id}
-                            className={`glass-panel p-2.5 rounded-xl border transition-all duration-300 relative flex flex-col ${plan.id === currentTier ? 'border-emerald-500 bg-emerald-500/10 ring-2 ring-emerald-500/5 scale-[1.02] z-10' : 'border-slate-800 hover:border-slate-700 hover:bg-slate-900/50'}`}
+                            className={`glass-panel p-3 rounded-xl border transition-all duration-300 relative flex flex-col ${plan.id === currentTier ? 'border-emerald-500 bg-emerald-500/10 ring-2 ring-emerald-500/5 scale-[1.02] z-10' : 'border-slate-800 hover:border-slate-700 hover:bg-slate-900/50'}`}
                         >
                             {plan.id === currentTier && (
                                 <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-emerald-500 text-[8px] font-black uppercase px-2 py-0.5 rounded-full text-white shadow-lg">
@@ -217,14 +218,14 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
                             )}
 
                             <div className="mb-2">
-                                <h3 className="text-xs font-black tracking-tight">{plan.name}</h3>
-                                <div className="flex items-baseline gap-0.5 mt-0.5">
-                                    <span className="text-base font-black">{(plan.prices as any)[currency]}</span>
-                                    <span className="text-[7px] text-slate-500 uppercase font-bold">/ mo</span>
+                                <h3 className="text-sm font-black tracking-tight">{plan.name}</h3>
+                                <div className="flex items-baseline gap-1 mt-1">
+                                    <span className="text-lg font-black">{(plan.prices as any)[currency]}</span>
+                                    <span className="text-[8px] text-slate-500 uppercase font-bold">/ mo</span>
                                 </div>
                             </div>
 
-                            <div className="space-y-1 flex-1">
+                            <div className="space-y-1.5 flex-1">
                                 {plan.features.map((feature, i) => (
                                     <div key={i} className="flex items-start gap-1.5">
                                         <Check className="w-3 h-3 text-emerald-500 mt-0.5" />
@@ -236,7 +237,7 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
                             <Button
                                 onClick={() => handleUpgrade(plan.id as SubscriptionTier)}
                                 disabled={plan.id === currentTier || !!loading}
-                                className={`w-full mt-2 h-7 rounded-lg font-black uppercase text-[8px] tracking-[0.1em] transition-all ${plan.id === currentTier ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-white text-slate-950 hover:bg-emerald-400 hover:text-white shadow-xl'}`}
+                                className={`w-full mt-3 h-8 rounded-xl font-black uppercase text-[9px] tracking-[0.1em] transition-all ${plan.id === currentTier ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-white text-slate-950 hover:bg-emerald-400 hover:text-white shadow-xl'}`}
                             >
                                 {loading === plan.id ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : plan.id === currentTier ? 'Active' : 'Get Started'}
                             </Button>
@@ -245,7 +246,7 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
                 </div>
 
                 {/* Sustainability Note */}
-                <p className="text-center text-[10px] text-slate-500 leading-snug max-w-md mx-auto">Cardflo is self-sustaining. Plans are priced to cover infrastructure and AI costs while keeping the product accessible.</p>
+                <p className="text-center text-xs text-slate-500 leading-relaxed max-w-lg mx-auto">Cardflo is self-sustaining. Plans are priced to cover infrastructure and AI costs while keeping the product accessible.</p>
 
                 {/* Coupon Section */}
                 <div className="glass-panel p-8 rounded-[2rem] border-slate-800 bg-slate-900/30">
