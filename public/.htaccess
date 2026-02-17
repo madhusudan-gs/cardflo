@@ -17,7 +17,13 @@
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteRule . - [R=404,L]
 
-  # 3. SPA ROUTING
+  # 3. CLEAN URLS – Try appending .html for static pages (e.g. /thankyou → /thankyou.html)
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME}.html -f
+  RewriteRule ^(.*)$ $1.html [L]
+
+  # 4. SPA ROUTING FALLBACK
   # Support single-page application navigation (everything falls back to index)
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d

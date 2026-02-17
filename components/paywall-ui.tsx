@@ -138,8 +138,8 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
     }, []);
 
     return (
-        <div className="min-h-screen bg-slate-950 text-white p-4 pb-20 overflow-y-auto scrollbar-hide">
-            <div className="max-w-5xl mx-auto space-y-3">
+        <div className="min-h-screen bg-slate-950 text-white p-4 overflow-y-auto scrollbar-hide flex flex-col justify-center">
+            <div className="max-w-5xl mx-auto w-full space-y-3">
                 {/* Usage Panel */}
                 <div className="glass-panel p-4 rounded-2xl border-emerald-500/20 bg-emerald-500/5 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 blur-[60px] rounded-full" />
