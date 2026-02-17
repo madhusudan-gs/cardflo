@@ -151,22 +151,22 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
     }, []);
 
     return (
-        <div className="min-h-screen bg-slate-950 text-white p-6 pb-20 overflow-y-auto scrollbar-hide">
-            <div className="max-w-4xl mx-auto space-y-8">
+        <div className="min-h-screen bg-slate-950 text-white p-4 pb-20 overflow-y-auto scrollbar-hide">
+            <div className="max-w-5xl mx-auto space-y-4">
                 {/* Usage Panel */}
-                <div className="glass-panel p-8 rounded-[2rem] border-emerald-500/20 bg-emerald-500/5 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-[80px] rounded-full" />
-                    <div className="flex justify-between items-end mb-4">
+                <div className="glass-panel p-4 rounded-2xl border-emerald-500/20 bg-emerald-500/5 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 blur-[60px] rounded-full" />
+                    <div className="flex justify-between items-end mb-2">
                         <div>
-                            <h2 className="text-sm font-black uppercase tracking-widest text-emerald-400 mb-1">Current Usage</h2>
-                            <p className="text-3xl font-black">{usageCount} / {totalLimit} <span className="text-xs text-slate-500 uppercase">Scans Used</span></p>
+                            <h2 className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-0.5">Current Usage</h2>
+                            <p className="text-xl font-black">{usageCount} / {totalLimit} <span className="text-[10px] text-slate-500 uppercase">Scans Used</span></p>
                         </div>
                         <div className="text-right">
                             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Active: {currentTier}</span>
                         </div>
                     </div>
 
-                    <div className="h-4 bg-slate-900 rounded-full border border-slate-800 overflow-hidden p-0.5">
+                    <div className="h-3 bg-slate-900 rounded-full border border-slate-800 overflow-hidden p-0.5">
                         <div
                             className={`h-full rounded-full transition-all duration-1000 ${isAtLimit ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-gradient-to-r from-emerald-600 to-cyan-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]'}`}
                             style={{ width: `${usagePercent}%` }}
@@ -174,7 +174,7 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
                     </div>
 
                     {isAtLimit && (
-                        <div className="mt-4 flex items-center gap-2 text-red-400 animate-pulse">
+                        <div className="mt-2 flex items-center gap-2 text-red-400 animate-pulse">
                             <AlertTriangle className="w-4 h-4" />
                             <span className="text-[10px] font-black uppercase tracking-tighter">Monthly limit reached. Upgrade to continue syncing.</span>
                         </div>
@@ -183,16 +183,16 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
 
                 {/* Currency Selector */}
                 <div className="flex justify-center">
-                    <div className="bg-slate-900 p-1 rounded-2xl flex border border-slate-800">
+                    <div className="bg-slate-900 p-0.5 rounded-xl flex border border-slate-800">
                         <button
                             onClick={() => setCurrency('INR')}
-                            className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${currency === 'INR' ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+                            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${currency === 'INR' ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
                         >
                             India (INR)
                         </button>
                         <button
                             onClick={() => setCurrency('USD')}
-                            className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${currency === 'USD' ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+                            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${currency === 'USD' ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
                         >
                             Global (USD)
                         </button>
@@ -200,31 +200,31 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
                 </div>
 
                 {/* Pricing Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
                     {plans.map((plan) => (
                         <div
                             key={plan.id}
-                            className={`glass-panel p-6 rounded-[2rem] border transition-all duration-300 relative flex flex-col ${plan.id === currentTier ? 'border-emerald-500 bg-emerald-500/10 ring-4 ring-emerald-500/5 scale-105 z-10' : 'border-slate-800 hover:border-slate-700 hover:bg-slate-900/50'}`}
+                            className={`glass-panel p-3 rounded-xl border transition-all duration-300 relative flex flex-col ${plan.id === currentTier ? 'border-emerald-500 bg-emerald-500/10 ring-2 ring-emerald-500/5 scale-[1.02] z-10' : 'border-slate-800 hover:border-slate-700 hover:bg-slate-900/50'}`}
                         >
                             {plan.id === currentTier && (
-                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-[10px] font-black uppercase px-3 py-1 rounded-full text-white shadow-lg">
+                                <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-emerald-500 text-[8px] font-black uppercase px-2 py-0.5 rounded-full text-white shadow-lg">
                                     Current Tier
                                 </div>
                             )}
 
-                            <div className="mb-6">
-                                <h3 className="text-lg font-black tracking-tight">{plan.name}</h3>
-                                <div className="flex items-baseline gap-1 mt-2">
-                                    <span className="text-2xl font-black">{(plan.prices as any)[currency]}</span>
-                                    <span className="text-[10px] text-slate-500 uppercase font-bold">/ month</span>
+                            <div className="mb-3">
+                                <h3 className="text-sm font-black tracking-tight">{plan.name}</h3>
+                                <div className="flex items-baseline gap-1 mt-1">
+                                    <span className="text-lg font-black">{(plan.prices as any)[currency]}</span>
+                                    <span className="text-[8px] text-slate-500 uppercase font-bold">/ mo</span>
                                 </div>
                             </div>
 
-                            <div className="space-y-4 flex-1">
+                            <div className="space-y-1.5 flex-1">
                                 {plan.features.map((feature, i) => (
-                                    <div key={i} className="flex items-start gap-2">
-                                        <Check className="w-3.5 h-3.5 text-emerald-500 mt-0.5" />
-                                        <span className="text-xs text-slate-300 font-medium">{feature}</span>
+                                    <div key={i} className="flex items-start gap-1.5">
+                                        <Check className="w-3 h-3 text-emerald-500 mt-0.5" />
+                                        <span className="text-[10px] text-slate-300 font-medium">{feature}</span>
                                     </div>
                                 ))}
                             </div>
@@ -232,7 +232,7 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
                             <Button
                                 onClick={() => handleUpgrade(plan.id as SubscriptionTier)}
                                 disabled={plan.id === currentTier || !!loading}
-                                className={`w-full mt-8 h-12 rounded-2xl font-black uppercase text-[10px] tracking-[0.1em] transition-all ${plan.id === currentTier ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-white text-slate-950 hover:bg-emerald-400 hover:text-white shadow-xl'}`}
+                                className={`w-full mt-3 h-8 rounded-xl font-black uppercase text-[9px] tracking-[0.1em] transition-all ${plan.id === currentTier ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-white text-slate-950 hover:bg-emerald-400 hover:text-white shadow-xl'}`}
                             >
                                 {loading === plan.id ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : plan.id === currentTier ? 'Active' : 'Get Started'}
                             </Button>
