@@ -58,6 +58,14 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
             features: ['500 Scans/mo', 'Unlimited Exports', 'Dedicated Support'],
             export: true
         },
+        {
+            id: 'team',
+            name: 'Teams',
+            scans: 500,
+            prices: { USD: '$99', INR: '₹7999' },
+            features: ['500 Scans/mo', 'Up to 5 Members', 'Unlimited Exports', 'Dedicated Support'],
+            export: true
+        },
     ];
 
     const handleUpgrade = async (tier: SubscriptionTier) => {
@@ -192,7 +200,7 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
                 </div>
 
                 {/* Pricing Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                     {plans.map((plan) => (
                         <div
                             key={plan.id}
