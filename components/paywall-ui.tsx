@@ -83,9 +83,13 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
             } else {
                 // Razorpay Checkout via Supabase Edge Function
                 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+                const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
                 const res = await fetch(`${supabaseUrl}/functions/v1/razorpay-checkout`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${supabaseAnonKey}`,
+                    },
                     body: JSON.stringify({ tier, userId, email }),
                 });
                 const { subscriptionId, key, error } = await res.json();
