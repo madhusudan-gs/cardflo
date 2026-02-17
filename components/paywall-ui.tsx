@@ -29,41 +29,41 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
         {
             id: 'starter',
             name: 'Starter',
-            scans: 5,
+            scans: 10,
             prices: { USD: 'Free', INR: 'Free' },
-            features: ['5 Scans/mo', 'Mobile App Access', 'AI OCR Extraction'],
+            features: ['10 Scans/mo', 'No Export', 'Basic Queue'],
             export: false
         },
         {
             id: 'lite',
             name: 'Lite',
-            scans: 30,
-            prices: { USD: '$9', INR: '₹799' },
-            features: ['30 Scans/mo', 'CSV/Sheets Export', 'Email Support'],
+            scans: 40,
+            prices: { USD: '$5', INR: '₹399' },
+            features: ['40 Scans/mo', 'Export Enabled', 'Email Support'],
             export: true
         },
         {
             id: 'standard',
             name: 'Standard',
-            scans: 120,
-            prices: { USD: '$24', INR: '₹1999' },
-            features: ['120 Scans/mo', 'CSV/Sheets Export', 'Priority AI Extraction'],
+            scans: 150,
+            prices: { USD: '$11', INR: '₹899' },
+            features: ['150 Scans/mo', 'Export Enabled', 'Priority AI Extraction'],
             export: true
         },
         {
             id: 'pro',
             name: 'Pro',
-            scans: 500,
-            prices: { USD: '$49', INR: '₹3999' },
-            features: ['500 Scans/mo', 'Unlimited Exports', 'Dedicated Support'],
+            scans: 600,
+            prices: { USD: '$22', INR: '₹1799' },
+            features: ['600 Scans/mo', 'Unlimited Exports', 'Dedicated Support'],
             export: true
         },
         {
             id: 'team',
             name: 'Teams',
-            scans: 500,
-            prices: { USD: '$99', INR: '₹7999' },
-            features: ['500 Scans/mo', 'Up to 5 Members', 'Unlimited Exports', 'Dedicated Support'],
+            scans: 1000,
+            prices: { USD: '$55', INR: '₹4499' },
+            features: ['1000 Shared Scans/mo', 'Up to 5 Members', 'Unlimited Exports', 'Dedicated Support'],
             export: true
         },
     ];

@@ -11,11 +11,11 @@ export interface PlanLimits {
 }
 
 export const PLAN_CONFIGS: Record<SubscriptionTier, PlanLimits> = {
-    starter: { scanLimit: 5, allowExport: false, teamMembers: 1 },
-    lite: { scanLimit: 30, allowExport: true, teamMembers: 1 },
-    standard: { scanLimit: 120, allowExport: true, teamMembers: 1 },
-    pro: { scanLimit: 500, allowExport: true, teamMembers: 1 },
-    team: { scanLimit: 500, allowExport: true, teamMembers: 5 },
+    starter: { scanLimit: 10, allowExport: false, teamMembers: 1 },
+    lite: { scanLimit: 40, allowExport: true, teamMembers: 1 },
+    standard: { scanLimit: 150, allowExport: true, teamMembers: 1 },
+    pro: { scanLimit: 600, allowExport: true, teamMembers: 1 },
+    team: { scanLimit: 1000, allowExport: true, teamMembers: 5 },
 };
 
 export async function getUserUsage(userId: string) {
