@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe-server';
+import Stripe from 'stripe';
 import { handleSubscriptionUpdated } from '@/lib/webhook-service';
 import { SubscriptionTier } from '@/lib/paywall-service';
 
@@ -55,7 +56,7 @@ export async function POST(req: Request) {
                         customerReference: subscription.customer as string,
                         subscriptionReference: subscription.id,
                         provider: 'stripe',
-                        billingCycleEnd: new Date((subscription as any).current_period_end * 1000).toISOString()
+                        billingCycleEnd: new Date((subscription as unknown as { current_period_end: number }).current_period_end * 1000).toISOString()
                     });
                 }
                 break;

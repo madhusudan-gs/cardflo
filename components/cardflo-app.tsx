@@ -119,6 +119,14 @@ export default function CardfloApp() {
         if (session?.user.id) {
             const { allowed, reason, warning } = await canScan(session.user.id);
             if (!allowed) {
+                if (reason === 'global_limit_reached') {
+                    alert("Limiting today's scan due to sudden surge in scans for security reasons");
+                    return;
+                }
+                if (reason === 'rate_limit_exceeded') {
+                    alert("AI is recalibrating data models. Please wait a moment.");
+                    return;
+                }
                 setStatus("PAYWALL");
                 return;
             }
@@ -255,8 +263,8 @@ export default function CardfloApp() {
                     <div className="absolute inset-0 border-[6px] border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
                 <div className="space-y-2">
-                    <h3 className="text-4xl font-black text-white tracking-tight">AI OCR Formulation [V2]...</h3>
-                    <p className="text-slate-400 font-bold uppercase tracking-tighter text-xs">Transforming pixels to data strings</p>
+                    <h3 className="text-4xl font-black text-white tracking-tight">Got it! Converting card to data...</h3>
+                    <p className="text-slate-400 font-bold uppercase tracking-tighter text-xs">Hang tight, this takes a few seconds.</p>
                 </div>
             </div>
         );

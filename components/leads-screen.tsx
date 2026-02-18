@@ -299,7 +299,7 @@ export function LeadsScreen({ onBack }: { onBack: () => void }) {
                                                     <Mail className="w-3.5 h-3.5 mr-2" />
                                                     <span>{lead.email}</span>
                                                 </div>
-                                                <button onClick={() => copyToClipboard(lead.email)} className="text-slate-600 hover:text-emerald-400 opacity-0 group-hover/item:opacity-100">
+                                                <button onClick={() => copyToClipboard(lead.email || '')} className="text-slate-600 hover:text-emerald-400 opacity-0 group-hover/item:opacity-100">
                                                     <Copy className="w-3 h-3" />
                                                 </button>
                                             </div>
@@ -310,7 +310,7 @@ export function LeadsScreen({ onBack }: { onBack: () => void }) {
                                                     <Phone className="w-3.5 h-3.5 mr-2" />
                                                     <span>{lead.phone}</span>
                                                 </div>
-                                                <button onClick={() => copyToClipboard(lead.phone)} className="text-slate-600 hover:text-emerald-400 opacity-0 group-hover/item:opacity-100">
+                                                <button onClick={() => copyToClipboard(lead.phone || '')} className="text-slate-600 hover:text-emerald-400 opacity-0 group-hover/item:opacity-100">
                                                     <Copy className="w-3 h-3" />
                                                 </button>
                                             </div>

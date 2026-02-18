@@ -26,6 +26,7 @@ export interface Database {
                     razorpay_subscription_id: string | null
                     referral_code: string | null
                     team_id: string | null
+                    is_admin: boolean | null
                 }
                 Insert: {
                     id: string
@@ -42,6 +43,7 @@ export interface Database {
                     razorpay_subscription_id?: string | null
                     referral_code?: string | null
                     team_id?: string | null
+                    is_admin?: boolean | null
                 }
                 Update: {
                     id?: string
@@ -58,7 +60,9 @@ export interface Database {
                     razorpay_subscription_id?: string | null
                     referral_code?: string | null
                     team_id?: string | null
+                    is_admin?: boolean | null
                 }
+                Relationships: []
             }
             leads: {
                 Row: {
@@ -76,6 +80,8 @@ export interface Database {
                     address: string | null
                     notes: string | null
                     image_url: string | null
+                    back_image_url: string | null
+                    scanned_at: string | null
                 }
                 Insert: {
                     id?: string
@@ -92,6 +98,8 @@ export interface Database {
                     address?: string | null
                     notes?: string | null
                     image_url?: string | null
+                    back_image_url?: string | null
+                    scanned_at?: string | null
                 }
                 Update: {
                     id?: string
@@ -108,7 +116,10 @@ export interface Database {
                     address?: string | null
                     notes?: string | null
                     image_url?: string | null
+                    back_image_url?: string | null
+                    scanned_at?: string | null
                 }
+                Relationships: []
             }
             teams: {
                 Row: {
@@ -129,6 +140,7 @@ export interface Database {
                     created_at?: string
                     owner_id?: string
                 }
+                Relationships: []
             }
             team_members: {
                 Row: {
@@ -149,6 +161,7 @@ export interface Database {
                     role?: 'owner' | 'admin' | 'member'
                     joined_at?: string
                 }
+                Relationships: []
             }
             usage: {
                 Row: {
@@ -178,7 +191,150 @@ export interface Database {
                     bonus_scans_remaining?: number | null
                     created_at?: string | null
                 }
+                Relationships: []
             }
+            drafts: {
+                Row: {
+                    id: string
+                    created_at: string
+                    created_by: string
+                    first_name: string | null
+                    last_name: string | null
+                    job_title: string | null
+                    company: string | null
+                    email: string | null
+                    phone: string | null
+                    website: string | null
+                    address: string | null
+                    notes: string | null
+                    image_url: string | null
+                    back_image_url: string | null
+                    scanned_at: string | null
+                }
+                Insert: {
+                    id?: string
+                    created_at?: string
+                    created_by: string
+                    first_name?: string | null
+                    last_name?: string | null
+                    job_title?: string | null
+                    company?: string | null
+                    email?: string | null
+                    phone?: string | null
+                    website?: string | null
+                    address?: string | null
+                    notes?: string | null
+                    image_url?: string | null
+                    back_image_url?: string | null
+                    scanned_at?: string | null
+                }
+                Update: {
+                    id?: string
+                    created_at?: string
+                    created_by?: string
+                    first_name?: string | null
+                    last_name?: string | null
+                    job_title?: string | null
+                    company?: string | null
+                    email?: string | null
+                    phone?: string | null
+                    website?: string | null
+                    address?: string | null
+                    notes?: string | null
+                    image_url?: string | null
+                    back_image_url?: string | null
+                    scanned_at?: string | null
+                }
+                Relationships: []
+            }
+            coupons: {
+                Row: {
+                    id: string
+                    code: string
+                    bonus_scans: number
+                    max_uses: number
+                    current_uses: number
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    code: string
+                    bonus_scans: number
+                    max_uses: number
+                    current_uses?: number
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    code?: string
+                    bonus_scans?: number
+                    max_uses?: number
+                    current_uses?: number
+                    created_at?: string
+                }
+                Relationships: []
+            }
+            app_settings: {
+                Row: {
+                    key: string
+                    value: Json
+                    updated_at: string | null
+                    updated_by: string | null
+                }
+                Insert: {
+                    key: string
+                    value: Json
+                    updated_at?: string | null
+                    updated_by?: string | null
+                }
+                Update: {
+                    key?: string
+                    value?: Json
+                    updated_at?: string | null
+                    updated_by?: string | null
+                }
+                Relationships: []
+            }
+        }
+        Views: {
+            [_ in never]: never
+        }
+        Functions: {
+            redeem_coupon: {
+                Args: {
+                    coupon_code: string
+                    target_user_id: string
+                }
+                Returns: Json
+            }
+            get_global_stats: {
+                Args: Record<string, never>
+                Returns: Json
+            }
+            check_rate_limit: {
+                Args: {
+                    check_user_id: string
+                }
+                Returns: boolean
+            }
+            get_admin_summary: {
+                Args: Record<string, never>
+                Returns: {
+                    totalUsers: number
+                    totalLeads: number
+                    activeSubscriptions: number
+                    planBreakdown: Record<string, number>
+                    estimatedMRR: number
+                    recentUsers: Json[]
+                    recentLeads: Json[]
+                }
+            }
+        }
+        Enums: {
+            [_ in never]: never
+        }
+        CompositeTypes: {
+            [_ in never]: never
         }
     }
 }

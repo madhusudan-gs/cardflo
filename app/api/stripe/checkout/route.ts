@@ -15,7 +15,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Starter tier is free' }, { status: 400 });
         }
 
-        const priceId = (PAYMENT_CONFIG.stripe.prices as any)[tier];
+        const priceId = PAYMENT_CONFIG.stripe.prices[tier as keyof typeof PAYMENT_CONFIG.stripe.prices];
 
         if (!priceId || priceId === 'price_placeholder_id') {
             return NextResponse.json({ error: 'Invalid price configuration' }, { status: 400 });

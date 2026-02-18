@@ -15,7 +15,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Starter tier is free' }, { status: 400 });
         }
 
-        const planId = (PAYMENT_CONFIG.razorpay.plans as any)[tier];
+        const planId = PAYMENT_CONFIG.razorpay.plans[tier as keyof typeof PAYMENT_CONFIG.razorpay.plans];
 
         if (!planId || planId === 'plan_placeholder_id') {
             return NextResponse.json({ error: 'Invalid plan configuration' }, { status: 400 });

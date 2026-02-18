@@ -12,8 +12,8 @@ export async function saveCard(card: CardData, userId: string): Promise<boolean>
             throw new Error(reason === 'limit_reached' ? 'Scan limit reached. Please upgrade your plan.' : 'Unauthorized scan attempt.');
         }
 
-        const { error } = await (supabase
-            .from('leads') as any)
+        const { error } = await supabase
+            .from('leads')
             .insert({
                 created_by: userId,
                 first_name: card.firstName?.trim(),
@@ -28,7 +28,7 @@ export async function saveCard(card: CardData, userId: string): Promise<boolean>
                 image_url: card.imageUrl,
                 back_image_url: card.backImage,
                 scanned_at: card.scannedAt || new Date().toISOString(),
-            } as any)
+            })
 
         if (error) {
             console.error('Supabase saveCard error:', error)
@@ -74,8 +74,8 @@ export async function getStats(userId: string): Promise<{ today: number, total: 
 
 export async function saveDraft(card: CardData, userId: string): Promise<string | null> {
     try {
-        const { data, error } = await (supabase
-            .from('drafts') as any)
+        const { data, error } = await supabase
+            .from('drafts')
             .insert({
                 created_by: userId,
                 first_name: card.firstName?.trim(),
@@ -89,7 +89,7 @@ export async function saveDraft(card: CardData, userId: string): Promise<string 
                 notes: card.notes?.trim(),
                 back_image_url: card.backImage,
                 scanned_at: card.scannedAt || new Date().toISOString(),
-            } as any)
+            })
             .select('id')
             .single();
 
@@ -107,8 +107,8 @@ export async function saveDraft(card: CardData, userId: string): Promise<string 
 
 export async function deleteDraft(draftId: string): Promise<boolean> {
     try {
-        const { error } = await (supabase
-            .from('drafts') as any)
+        const { error } = await supabase
+            .from('drafts')
             .delete()
             .eq('id', draftId);
 
@@ -225,12 +225,12 @@ export async function checkDuplicateLead(
 export async function updateLead(leadId: string, leadData: Partial<Lead>): Promise<boolean> {
     try {
         // Sanitize data: remove non-updatable fields
-        const { id, created_at, created_by, ...editableData } = leadData as any;
+        const { id, created_at, created_by, ...editableData } = leadData;
 
         console.log(`[UPDATE LEAD] Attempting update for ID: ${leadId}`, editableData);
 
-        const { error } = await (supabase
-            .from('leads') as any)
+        const { error } = await supabase
+            .from('leads')
             .update(editableData)
             .eq('id', leadId);
 
@@ -247,7 +247,3 @@ export async function updateLead(leadId: string, leadData: Partial<Lead>): Promi
     }
 }
 
-// Utility for logging
-function digitOnly(s: string): string {
-    return (s || "").replace(/\D/g, '');
-}

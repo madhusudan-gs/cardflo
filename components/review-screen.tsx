@@ -213,10 +213,20 @@ export function ReviewScreen({ data: initialData, frontImage, backImage, onSave,
 
                         <div className="pt-4 mt-auto">
                             {!data.isDuplicate ? (
-                                <Button onClick={() => onSave(data)} className="w-full h-16 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-lg rounded-3xl shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3">
-                                    <Check className="w-6 h-6" />
-                                    Confirm & Sync
-                                </Button>
+                                <>
+                                    <Button onClick={() => onSave(data)} className="w-full h-16 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-lg rounded-3xl shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3">
+                                        <Check className="w-6 h-6" />
+                                        Confirm & Sync
+                                    </Button>
+                                    <div className="text-center mt-6 pb-2">
+                                        <button
+                                            onClick={onCancel}
+                                            className="text-xs text-slate-400 hover:text-red-400 font-bold uppercase tracking-widest transition-colors border-b border-transparent hover:border-red-400/50 pb-0.5"
+                                        >
+                                            Cancel & Rescan
+                                        </button>
+                                    </div>
+                                </>
                             ) : (
                                 <p className="text-center text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] px-4">
                                     Review data above to decide how to proceed with this duplicate

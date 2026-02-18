@@ -1,6 +1,5 @@
 
 import { supabase } from './supabase';
-import { Lead } from './types';
 
 export type SubscriptionTier = 'starter' | 'lite' | 'standard' | 'pro' | 'team';
 
@@ -32,7 +31,7 @@ export async function getUserUsage(userId: string) {
         return null;
     }
 
-    return data as any;
+    return data;
 }
 
 export async function getUserProfile(userId: string) {
@@ -47,20 +46,39 @@ export async function getUserProfile(userId: string) {
         return null;
     }
 
-    return data as any;
+    return data;
 }
 
-export async function canScan(userId: string): Promise<{ allowed: boolean; reason?: 'limit_reached' | 'error'; warning?: boolean }> {
+export async function canScan(userId: string): Promise<{ allowed: boolean; reason?: 'limit_reached' | 'error' | 'global_limit_reached' | 'rate_limit_exceeded'; warning?: boolean }> {
     try {
+        // 1. Check Global Limits
+        const { data: globalStats, error: globalError } = await supabase.rpc('get_global_stats');
+
+        if (!globalError && globalStats) {
+            const stats = globalStats as { daily_scan_count: number; daily_scan_limit: number };
+            if (stats.daily_scan_count >= stats.daily_scan_limit) {
+                return { allowed: false, reason: 'global_limit_reached' };
+            }
+        }
+
         const profile = await getUserProfile(userId);
         if (!profile) return { allowed: false, reason: 'error' };
 
-        // Super Admin Bypass: Always allow scans
-        if ((profile as any).is_admin) {
+        // Super Admin Bypass
+        if (profile.is_admin) {
             return { allowed: true };
         }
 
         const tier = (profile.subscription_tier as SubscriptionTier) || 'starter';
+
+        // 2. Check Rate Limit (Free Tier Only)
+        if (tier === 'starter') {
+            const { data: isRateAllowed, error: rateError } = await supabase.rpc('check_rate_limit', { check_user_id: userId });
+            if (!rateError && isRateAllowed === false) {
+                return { allowed: false, reason: 'rate_limit_exceeded' };
+            }
+        }
+
         const config = PLAN_CONFIGS[tier];
 
         const usage = await getUserUsage(userId);
@@ -73,8 +91,8 @@ export async function canScan(userId: string): Promise<{ allowed: boolean; reaso
             return { allowed: true }; // Cycle reset needed
         }
 
-        const totalScans = (usage as any).scans_count || 0;
-        const bonusScans = (usage as any).bonus_scans_remaining || 0;
+        const totalScans = usage.scans_count || 0;
+        const bonusScans = usage.bonus_scans_remaining || 0;
         const totalLimit = config.scanLimit + bonusScans;
 
         if (totalScans >= totalLimit) {
@@ -97,7 +115,7 @@ export async function canScan(userId: string): Promise<{ allowed: boolean; reaso
 export async function incrementUsage(userId: string) {
     // 1. Check for profile billing cycle
     const profile = await getUserProfile(userId);
-    const cycleEnd = (profile as any)?.billing_cycle_end || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const cycleEnd = profile?.billing_cycle_end || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
     const { data: usage } = await supabase
         .from('usage')
@@ -108,11 +126,11 @@ export async function incrementUsage(userId: string) {
         .single();
 
     // 2. If usage exists and is in current cycle, update it
-    if (usage && (!(usage as any).cycle_end || new Date((usage as any).cycle_end) > new Date())) {
-        const updateData = { scans_count: ((usage as any).scans_count || 0) + 1 };
-        await (supabase.from('usage') as any)
+    if (usage && (!usage.cycle_end || new Date(usage.cycle_end) > new Date())) {
+        const updateData = { scans_count: (usage.scans_count || 0) + 1 };
+        await supabase.from('usage')
             .update(updateData)
-            .eq('id', (usage as any).id);
+            .eq('id', usage.id);
     } else {
         // 3. Create new usage record for new cycle
         await supabase
@@ -122,13 +140,13 @@ export async function incrementUsage(userId: string) {
                 scans_count: 1,
                 cycle_start: new Date().toISOString(),
                 cycle_end: cycleEnd
-            } as any);
+            });
     }
 }
 
 export async function redeemCoupon(userId: string, code: string): Promise<{ success: boolean; message: string; bonus_scans?: number }> {
     try {
-        const { data, error } = await (supabase.rpc as any)('redeem_coupon', {
+        const { data, error } = await supabase.rpc('redeem_coupon', {
             coupon_code: code,
             target_user_id: userId
         });
@@ -143,4 +161,18 @@ export async function redeemCoupon(userId: string, code: string): Promise<{ succ
         console.error('Coupon redemption catch:', err);
         return { success: false, message: 'Unexpected error during redemption' };
     }
+}
+
+export async function toggleRegistrations(enabled: boolean) {
+    const { error } = await supabase
+        .from('app_settings')
+        .update({ value: enabled, updated_at: new Date().toISOString() })
+        .eq('key', 'registrations_enabled');
+
+    return !error;
+}
+
+export async function getGlobalSettings() {
+    const { data } = await supabase.rpc('get_global_stats');
+    return data as { daily_scan_count: number; registrations_enabled: boolean; daily_scan_limit: number };
 }

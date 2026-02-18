@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/shared";
-import { ChevronLeft, Users, Database, CreditCard, Activity, Loader2, Ticket, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, Users, Database, CreditCard, Activity, Loader2, Ticket, Plus, Trash2, ShieldAlert, Lock, Unlock } from "lucide-react";
+import { toggleRegistrations, getGlobalSettings } from "@/lib/paywall-service";
 
 export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
     onBack: () => void,
@@ -39,6 +40,14 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
     const [newCode, setNewCode] = useState("");
     const [bonusScans, setBonusScans] = useState(50);
     const [maxUses, setMaxUses] = useState(1);
+
+    // Security State
+    const [security, setSecurity] = useState({
+        registrationsEnabled: true,
+        dailyScanLimit: 5000,
+        dailyScanCount: 0
+    });
+    const [toggling, setToggling] = useState(false);
 
     useEffect(() => {
         const fetchAdminStats = async () => {
@@ -82,8 +91,33 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
             }
         };
 
+        const fetchSecuritySettings = async () => {
+            if (userRole !== 'super_admin') return;
+            const settings = await getGlobalSettings();
+            if (settings) {
+                setSecurity({
+                    registrationsEnabled: settings.registrations_enabled,
+                    dailyScanLimit: settings.daily_scan_limit,
+                    dailyScanCount: settings.daily_scan_count
+                });
+            }
+        };
+
         fetchAdminStats();
+        fetchSecuritySettings();
     }, [userRole, teamId]);
+
+    const handleToggleRegistrations = async () => {
+        setToggling(true);
+        const newState = !security.registrationsEnabled;
+        const success = await toggleRegistrations(newState);
+        if (success) {
+            setSecurity(prev => ({ ...prev, registrationsEnabled: newState }));
+        } else {
+            alert("Failed to update registration settings");
+        }
+        setToggling(false);
+    };
 
     const handleGenerateCoupon = async () => {
         if (!newCode) return;
@@ -235,6 +269,52 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
                                 </li>
                             </ul>
                         </div>
+
+                        {/* Security Controls */}
+                        {userRole === 'super_admin' && (
+                            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                    <ShieldAlert className="w-24 h-24 text-red-500" />
+                                </div>
+                                <h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2 relative z-10">
+                                    <ShieldAlert className="w-3 h-3 text-red-500" />
+                                    Security Protocols
+                                </h4>
+
+                                <div className="space-y-4 relative z-10">
+                                    <div className="flex items-center justify-between p-4 bg-slate-950/50 rounded-2xl border border-slate-800/50">
+                                        <div>
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Global Scan Load</p>
+                                            <div className="flex items-baseline gap-1 mt-1">
+                                                <span className={`text-xl font-black ${security.dailyScanCount > 4000 ? 'text-red-500' : 'text-white'}`}>
+                                                    {security.dailyScanCount}
+                                                </span>
+                                                <span className="text-[9px] font-bold text-slate-600">/ {security.dailyScanLimit}</span>
+                                            </div>
+                                        </div>
+                                        <div className="h-10 w-1 bg-slate-800 rounded-full" />
+                                        <div className="flex flex-col items-end">
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">New Registrations</p>
+                                            <button
+                                                onClick={handleToggleRegistrations}
+                                                disabled={toggling}
+                                                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${security.registrationsEnabled
+                                                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20'
+                                                        : 'bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/20'
+                                                    }`}
+                                            >
+                                                {toggling ? <Loader2 className="w-3 h-3 animate-spin" /> : (
+                                                    security.registrationsEnabled ? <Unlock className="w-3 h-3" /> : <Lock className="w-3 h-3" />
+                                                )}
+                                                <span className="text-[9px] font-black uppercase tracking-widest">
+                                                    {security.registrationsEnabled ? 'Allowed' : 'Locked'}
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </>
                 )}
 
