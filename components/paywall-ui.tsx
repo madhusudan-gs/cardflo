@@ -138,7 +138,7 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
     }, []);
 
     return (
-        <div className="h-screen bg-slate-950 text-white p-4 overflow-hidden flex flex-col items-center justify-center">
+        <div className="h-screen bg-slate-950 text-white p-4 overflow-hidden flex flex-col items-center justify-start pt-24">
             <div className="max-w-6xl mx-auto w-full space-y-4">
 
                 {/* Header Section: Usage + Currency */}
