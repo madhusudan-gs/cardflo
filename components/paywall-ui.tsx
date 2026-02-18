@@ -138,81 +138,78 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
     }, []);
 
     return (
-        <div className="min-h-screen bg-slate-950 text-white p-4 overflow-y-auto scrollbar-hide flex flex-col justify-center">
-            <div className="max-w-5xl mx-auto w-full space-y-3">
-                {/* Usage Panel */}
-                <div className="glass-panel p-4 rounded-2xl border-emerald-500/20 bg-emerald-500/5 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 blur-[60px] rounded-full" />
-                    <div className="flex justify-between items-end mb-2">
-                        <div>
-                            <h2 className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-0.5">Current Usage</h2>
-                            <p className="text-2xl font-black">{usageCount} / {totalLimit} <span className="text-[10px] text-slate-500 uppercase">Scans Used</span></p>
-                        </div>
-                        <div className="text-right">
-                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Active: {currentTier}</span>
+        <div className="h-screen bg-slate-950 text-white p-4 overflow-hidden flex flex-col items-center justify-center">
+            <div className="max-w-6xl mx-auto w-full space-y-4">
+
+                {/* Header Section: Usage + Currency */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                    {/* Compact Usage Panel */}
+                    <div className="col-span-2 glass-panel p-3 rounded-xl border-emerald-500/20 bg-emerald-500/5 relative overflow-hidden flex items-center justify-between gap-4">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 blur-[60px] rounded-full" />
+
+                        <div className="flex-1 min-w-0">
+                            <div className="flex justify-between items-baseline mb-1.5">
+                                <h2 className="text-[9px] font-black uppercase tracking-widest text-emerald-400">Scan Usage</h2>
+                                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{currentTier} Tier</span>
+                            </div>
+                            <div className="h-2 bg-slate-900 rounded-full border border-slate-800 overflow-hidden p-[1px]">
+                                <div
+                                    className={`h-full rounded-full transition-all duration-1000 ${isAtLimit ? 'bg-red-500' : 'bg-gradient-to-r from-emerald-600 to-cyan-500'}`}
+                                    style={{ width: `${usagePercent}%` }}
+                                />
+                            </div>
+                            <div className="flex justify-between mt-1">
+                                <p className="text-xs font-black text-white">{usageCount} / {totalLimit}</p>
+                                {isAtLimit && <span className="text-[8px] font-bold text-red-400 uppercase tracking-wider animate-pulse">Limit Reached</span>}
+                            </div>
                         </div>
                     </div>
 
-                    <div className="h-3 bg-slate-900 rounded-full border border-slate-800 overflow-hidden p-0.5">
-                        <div
-                            className={`h-full rounded-full transition-all duration-1000 ${isAtLimit ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-gradient-to-r from-emerald-600 to-cyan-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]'}`}
-                            style={{ width: `${usagePercent}%` }}
-                        />
-                    </div>
-
-                    {isAtLimit && (
-                        <div className="mt-2 flex items-center gap-2 text-red-400 animate-pulse">
-                            <AlertTriangle className="w-4 h-4" />
-                            <span className="text-[10px] font-black uppercase tracking-tighter">Monthly limit reached. Upgrade to continue syncing.</span>
+                    {/* Currency Selector */}
+                    <div className="flex justify-end">
+                        <div className="bg-slate-900 p-0.5 rounded-lg flex border border-slate-800 inline-flex">
+                            <button
+                                onClick={() => setCurrency('INR')}
+                                className={`px-4 py-1.5 rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${currency === 'INR' ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+                            >
+                                INR
+                            </button>
+                            <button
+                                disabled
+                                className="px-4 py-1.5 rounded-md text-[9px] font-black uppercase tracking-widest text-slate-600 cursor-not-allowed"
+                            >
+                                USD
+                            </button>
                         </div>
-                    )}
-                </div>
-
-                {/* Currency Selector */}
-                <div className="flex justify-center">
-                    <div className="bg-slate-900 p-0.5 rounded-xl flex border border-slate-800">
-                        <button
-                            onClick={() => setCurrency('INR')}
-                            className={`px-5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${currency === 'INR' ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
-                        >
-                            INR
-                        </button>
-                        <button
-                            disabled
-                            className="px-5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-600 cursor-not-allowed relative group"
-                        >
-                            USD
-                            <span className="absolute -top-5 left-1/2 -translate-x-1/2 bg-slate-800 text-[8px] text-slate-400 px-2 py-0.5 rounded-full whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Coming Soon</span>
-                        </button>
                     </div>
                 </div>
 
                 {/* Pricing Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+                <div className="grid grid-cols-5 gap-2 h-auto">
                     {plans.map((plan) => (
                         <div
                             key={plan.id}
-                            className={`glass-panel p-3 rounded-xl border transition-all duration-300 relative flex flex-col ${plan.id === currentTier ? 'border-emerald-500 bg-emerald-500/10 ring-2 ring-emerald-500/5 scale-[1.02] z-10' : 'border-slate-800 hover:border-slate-700 hover:bg-slate-900/50'}`}
+                            className={`glass-panel p-3 rounded-xl border transition-all duration-300 relative flex flex-col ${plan.id === currentTier ? 'border-emerald-500 bg-emerald-500/10 ring-1 ring-emerald-500/50 z-10' : 'border-slate-800 hover:border-slate-700 hover:bg-slate-900/50'}`}
                         >
                             {plan.id === currentTier && (
-                                <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-emerald-500 text-[8px] font-black uppercase px-2 py-0.5 rounded-full text-white shadow-lg">
-                                    Current Tier
+                                <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-emerald-500 text-[7px] font-black uppercase px-2 py-0.5 rounded-full text-white shadow-sm whitespace-nowrap">
+                                    Current Plan
                                 </div>
                             )}
 
-                            <div className="mb-2">
-                                <h3 className="text-sm font-black tracking-tight">{plan.name}</h3>
-                                <div className="flex items-baseline gap-1 mt-1">
-                                    <span className="text-lg font-black">{(plan.prices as any)[currency]}</span>
-                                    <span className="text-[8px] text-slate-500 uppercase font-bold">/ mo</span>
+                            <div className="mb-3 text-center">
+                                <h3 className="text-xs font-black tracking-tight text-slate-300 uppercase">{plan.name}</h3>
+                                <div className="flex items-baseline justify-center gap-0.5 mt-1 border-b border-slate-800/50 pb-2">
+                                    <span className="text-xl font-black text-white">{(plan.prices as any)[currency]}</span>
+                                    {(plan.prices as any)[currency] !== 'Free' && <span className="text-[8px] text-slate-500 uppercase font-bold">/mo</span>}
                                 </div>
                             </div>
 
-                            <div className="space-y-1.5 flex-1">
+                            <div className="space-y-2 flex-1 overflow-hidden">
                                 {plan.features.map((feature, i) => (
                                     <div key={i} className="flex items-start gap-1.5">
-                                        <Check className="w-3 h-3 text-emerald-500 mt-0.5" />
-                                        <span className="text-[10px] text-slate-300 font-medium">{feature}</span>
+                                        <Check className="w-2.5 h-2.5 text-emerald-500 mt-0.5 shrink-0" />
+                                        <span className="text-[9px] text-slate-400 font-medium leading-tight">{feature}</span>
                                     </div>
                                 ))}
                             </div>
@@ -220,22 +217,22 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
                             <Button
                                 onClick={() => handleUpgrade(plan.id as SubscriptionTier)}
                                 disabled={plan.id === currentTier || !!loading}
-                                className={`w-full mt-3 h-8 rounded-xl font-black uppercase text-[9px] tracking-[0.1em] transition-all ${plan.id === currentTier ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-white text-slate-950 hover:bg-emerald-400 hover:text-white shadow-xl'}`}
+                                className={`w-full mt-3 h-7 rounded-lg font-black uppercase text-[8px] tracking-[0.1em] transition-all ${plan.id === currentTier ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-white text-slate-950 hover:bg-emerald-400 hover:text-white shadow-md'}`}
                             >
-                                {loading === plan.id ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : plan.id === currentTier ? 'Active' : 'Get Started'}
+                                {loading === plan.id ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : plan.id === currentTier ? 'Active' : 'Upgrade'}
                             </Button>
                         </div>
                     ))}
                 </div>
 
-                {/* Sustainability Note */}
-                <p className="text-center text-xs text-slate-500 leading-relaxed max-w-lg mx-auto">Cardflo is self-sustaining. Plans are priced to cover infrastructure and AI costs while keeping the product accessible.</p>
-
-                {/* Back to Home */}
-                <div className="text-center">
-                    <Button variant="ghost" onClick={onClose} className="text-slate-400 hover:text-white text-[10px] font-black uppercase tracking-widest gap-1.5">
-                        <ArrowLeft className="w-3.5 h-3.5" />
-                        Back to Home
+                {/* Footer */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-800/50">
+                    <p className="text-[9px] text-slate-600 max-w-lg leading-relaxed">
+                        Sustainable pricing for AI infrastructure. Verify your details before upgrading.
+                    </p>
+                    <Button variant="ghost" onClick={onClose} className="text-slate-400 hover:text-white text-[9px] font-black uppercase tracking-widest gap-1.5 h-auto py-1">
+                        <ArrowLeft className="w-3 h-3" />
+                        Back
                     </Button>
                 </div>
             </div>
