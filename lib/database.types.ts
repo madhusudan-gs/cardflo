@@ -255,6 +255,7 @@ export interface Database {
                     max_uses: number
                     current_uses: number
                     created_at: string
+                    duration_months: number
                 }
                 Insert: {
                     id?: string
@@ -263,6 +264,7 @@ export interface Database {
                     max_uses: number
                     current_uses?: number
                     created_at?: string
+                    duration_months?: number
                 }
                 Update: {
                     id?: string
@@ -271,6 +273,7 @@ export interface Database {
                     max_uses?: number
                     current_uses?: number
                     created_at?: string
+                    duration_months?: number
                 }
                 Relationships: []
             }

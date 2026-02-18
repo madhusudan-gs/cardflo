@@ -40,6 +40,7 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
     const [newCode, setNewCode] = useState("");
     const [bonusScans, setBonusScans] = useState(50);
     const [maxUses, setMaxUses] = useState(1);
+    const [durationMonths, setDurationMonths] = useState(1);
 
     // Security State
     const [security, setSecurity] = useState({
@@ -125,7 +126,8 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
         const { error } = await (supabase.from('coupons') as any).insert({
             code: newCode,
             bonus_scans: bonusScans,
-            max_uses: maxUses
+            max_uses: maxUses,
+            duration_months: durationMonths
         });
 
         if (!error) {
@@ -299,8 +301,8 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
                                                 onClick={handleToggleRegistrations}
                                                 disabled={toggling}
                                                 className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${security.registrationsEnabled
-                                                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20'
-                                                        : 'bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/20'
+                                                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20'
+                                                    : 'bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/20'
                                                     }`}
                                             >
                                                 {toggling ? <Loader2 className="w-3 h-3 animate-spin" /> : (
@@ -381,6 +383,11 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
                                         <input type="number" value={maxUses} onChange={(e) => setMaxUses(parseInt(e.target.value))} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white" />
                                     </div>
                                 </div>
+                                <div>
+                                    <label className="text-[8px] font-black uppercase text-slate-500 mb-1 block tracking-widest">Duration (Months)</label>
+                                    <input type="number" value={durationMonths} onChange={(e) => setDurationMonths(parseInt(e.target.value))} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white" min="1" />
+                                    <p className="text-[8px] text-slate-500 mt-1">Users get <strong className="text-emerald-400">{durationMonths + 1} months</strong> to use these scans.</p>
+                                </div>
                                 <Button className="w-full bg-emerald-500 text-slate-950 font-black rounded-xl h-12 uppercase tracking-widest text-[10px]" onClick={handleGenerateCoupon} disabled={!newCode || generating}>
                                     {generating ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Create Discount'}
                                 </Button>
@@ -397,7 +404,7 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
                                         </div>
                                         <div>
                                             <p className="text-xs font-mono font-bold text-white tracking-widest uppercase">{c.code}</p>
-                                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-tighter">+{c.bonus_scans} Scans • {c.current_uses}/{c.max_uses} used</p>
+                                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-tighter">+{c.bonus_scans} Scans • {c.current_uses}/{c.max_uses} used • {c.duration_months || 1}mo</p>
                                         </div>
                                     </div>
                                     <Button variant="ghost" size="icon" className="text-slate-600 hover:text-red-400" onClick={() => handleDeleteCoupon(c.id)}>
