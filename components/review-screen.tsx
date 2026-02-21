@@ -18,6 +18,10 @@ export function ReviewScreen({ data: initialData, frontImage, backImage, onSave,
     const [viewingSide, setViewingSide] = useState<"front" | "back">("front");
     const [userNotes, setUserNotes] = useState("");
 
+    const handleChange = (field: keyof CardData, value: string) => {
+        setData((prev) => ({ ...prev, [field]: value }));
+    };
+
     const handleSave = () => {
         const finalNotes = [data.notes, userNotes ? `User Notes/Keywords:\n${userNotes}` : ""].filter(Boolean).join('\n\n---\n');
         onSave({ ...data, notes: finalNotes });
@@ -104,16 +108,16 @@ export function ReviewScreen({ data: initialData, frontImage, backImage, onSave,
                                 <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">First Name</Label>
                                 <Input
                                     value={data.firstName}
-                                    readOnly
-                                    className="bg-slate-900/50 border-slate-700/50 text-slate-400 rounded-2xl cursor-default focus:ring-0"
+                                    onChange={(e) => handleChange("firstName", e.target.value)}
+                                    className="bg-slate-800/50 border-slate-700 rounded-2xl focus:ring-emerald-500/50"
                                 />
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Last Name</Label>
                                 <Input
                                     value={data.lastName}
-                                    readOnly
-                                    className="bg-slate-900/50 border-slate-700/50 text-slate-400 rounded-2xl cursor-default focus:ring-0"
+                                    onChange={(e) => handleChange("lastName", e.target.value)}
+                                    className="bg-slate-800/50 border-slate-700 rounded-2xl focus:ring-emerald-500/50"
                                 />
                             </div>
                         </div>
@@ -122,8 +126,8 @@ export function ReviewScreen({ data: initialData, frontImage, backImage, onSave,
                             <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Job Title</Label>
                             <Input
                                 value={data.jobTitle}
-                                readOnly
-                                className="bg-slate-900/50 border-slate-700/50 text-slate-400 rounded-2xl cursor-default focus:ring-0"
+                                onChange={(e) => handleChange("jobTitle", e.target.value)}
+                                className="bg-slate-800/50 border-slate-700 rounded-2xl focus:ring-emerald-500/50"
                             />
                         </div>
 
@@ -131,8 +135,8 @@ export function ReviewScreen({ data: initialData, frontImage, backImage, onSave,
                             <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Company</Label>
                             <Input
                                 value={data.company}
-                                readOnly
-                                className="bg-slate-900/50 border-slate-700/50 text-slate-400 rounded-2xl cursor-default focus:ring-0"
+                                onChange={(e) => handleChange("company", e.target.value)}
+                                className="bg-slate-800/50 border-slate-700 rounded-2xl focus:ring-emerald-500/50"
                             />
                         </div>
 
@@ -142,8 +146,8 @@ export function ReviewScreen({ data: initialData, frontImage, backImage, onSave,
                                 <Input
                                     type="email"
                                     value={data.email}
-                                    readOnly
-                                    className="bg-slate-900/50 border-slate-700/50 text-slate-400 rounded-2xl cursor-default focus:ring-0"
+                                    onChange={(e) => handleChange("email", e.target.value)}
+                                    className="bg-slate-800/50 border-slate-700 rounded-2xl focus:ring-emerald-500/50"
                                 />
                             </div>
 
@@ -152,8 +156,8 @@ export function ReviewScreen({ data: initialData, frontImage, backImage, onSave,
                                 <Input
                                     type="tel"
                                     value={data.phone}
-                                    readOnly
-                                    className="bg-slate-900/50 border-slate-700/50 text-slate-400 rounded-2xl cursor-default focus:ring-0"
+                                    onChange={(e) => handleChange("phone", e.target.value)}
+                                    className="bg-slate-800/50 border-slate-700 rounded-2xl focus:ring-emerald-500/50"
                                 />
                             </div>
                         </div>
