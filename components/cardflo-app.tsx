@@ -364,8 +364,8 @@ export default function CardfloApp() {
     return (
         <div className="min-h-screen bg-slate-950 p-6 flex flex-col">
             <header className="flex justify-between items-center mb-8">
-                <div>
-                    <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Cardflo</h1>
+                <div className="flex flex-col items-start gap-1">
+                    <img src="/logo.png" alt="Cardflo" className="h-8 w-auto object-contain" />
                     <p className="text-slate-400 text-xs">{session?.user.email}</p>
                 </div>
                 <Button
