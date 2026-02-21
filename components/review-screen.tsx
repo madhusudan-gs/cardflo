@@ -16,9 +16,11 @@ interface ReviewScreenProps {
 export function ReviewScreen({ data: initialData, frontImage, backImage, onSave, onCancel, onScanBack, duplicateMatch }: ReviewScreenProps) {
     const [data, setData] = useState<CardData>(initialData);
     const [viewingSide, setViewingSide] = useState<"front" | "back">("front");
+    const [userNotes, setUserNotes] = useState("");
 
-    const handleChange = (field: keyof CardData, value: string) => {
-        setData((prev) => ({ ...prev, [field]: value }));
+    const handleSave = () => {
+        const finalNotes = [data.notes, userNotes ? `User Notes/Keywords:\n${userNotes}` : ""].filter(Boolean).join('\n\n---\n');
+        onSave({ ...data, notes: finalNotes });
     };
 
     return (
@@ -102,16 +104,16 @@ export function ReviewScreen({ data: initialData, frontImage, backImage, onSave,
                                 <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">First Name</Label>
                                 <Input
                                     value={data.firstName}
-                                    onChange={(e) => handleChange("firstName", e.target.value)}
-                                    className="bg-slate-800/50 border-slate-700 rounded-2xl focus:ring-emerald-500/50"
+                                    readOnly
+                                    className="bg-slate-900/50 border-slate-700/50 text-slate-400 rounded-2xl cursor-default focus:ring-0"
                                 />
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Last Name</Label>
                                 <Input
                                     value={data.lastName}
-                                    onChange={(e) => handleChange("lastName", e.target.value)}
-                                    className="bg-slate-800/50 border-slate-700 rounded-2xl focus:ring-emerald-500/50"
+                                    readOnly
+                                    className="bg-slate-900/50 border-slate-700/50 text-slate-400 rounded-2xl cursor-default focus:ring-0"
                                 />
                             </div>
                         </div>
@@ -120,8 +122,8 @@ export function ReviewScreen({ data: initialData, frontImage, backImage, onSave,
                             <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Job Title</Label>
                             <Input
                                 value={data.jobTitle}
-                                onChange={(e) => handleChange("jobTitle", e.target.value)}
-                                className="bg-slate-800/50 border-slate-700 rounded-2xl focus:ring-emerald-500/50"
+                                readOnly
+                                className="bg-slate-900/50 border-slate-700/50 text-slate-400 rounded-2xl cursor-default focus:ring-0"
                             />
                         </div>
 
@@ -129,8 +131,8 @@ export function ReviewScreen({ data: initialData, frontImage, backImage, onSave,
                             <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Company</Label>
                             <Input
                                 value={data.company}
-                                onChange={(e) => handleChange("company", e.target.value)}
-                                className="bg-slate-800/50 border-slate-700 rounded-2xl focus:ring-emerald-500/50"
+                                readOnly
+                                className="bg-slate-900/50 border-slate-700/50 text-slate-400 rounded-2xl cursor-default focus:ring-0"
                             />
                         </div>
 
@@ -140,8 +142,8 @@ export function ReviewScreen({ data: initialData, frontImage, backImage, onSave,
                                 <Input
                                     type="email"
                                     value={data.email}
-                                    onChange={(e) => handleChange("email", e.target.value)}
-                                    className="bg-slate-800/50 border-slate-700 rounded-2xl focus:ring-emerald-500/50"
+                                    readOnly
+                                    className="bg-slate-900/50 border-slate-700/50 text-slate-400 rounded-2xl cursor-default focus:ring-0"
                                 />
                             </div>
 
@@ -150,19 +152,29 @@ export function ReviewScreen({ data: initialData, frontImage, backImage, onSave,
                                 <Input
                                     type="tel"
                                     value={data.phone}
-                                    onChange={(e) => handleChange("phone", e.target.value)}
-                                    className="bg-slate-800/50 border-slate-700 rounded-2xl focus:ring-emerald-500/50"
+                                    readOnly
+                                    className="bg-slate-900/50 border-slate-700/50 text-slate-400 rounded-2xl cursor-default focus:ring-0"
                                 />
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Contact Notes</Label>
+                            <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">AI Extracted Context</Label>
                             <Textarea
                                 value={data.notes}
-                                onChange={(e) => handleChange("notes", e.target.value)}
-                                className="bg-slate-800/50 border-slate-700 rounded-[2rem] h-32 focus:ring-emerald-500/50 resize-none p-5"
-                                placeholder="Transformation details..."
+                                readOnly
+                                className="bg-slate-900/50 border-slate-700/50 text-slate-400 rounded-[2rem] h-24 cursor-default focus:ring-0 resize-none p-5"
+                                placeholder="..."
+                            />
+                        </div>
+
+                        <div className="space-y-2 mt-4 p-5 rounded-3xl bg-emerald-500/10 border border-emerald-500/20">
+                            <Label className="text-[10px] font-black text-emerald-400 uppercase tracking-widest ml-1">Add Searchable Keywords/Notes</Label>
+                            <Textarea
+                                value={userNotes}
+                                onChange={(e) => setUserNotes(e.target.value)}
+                                className="bg-slate-950/50 border-emerald-500/30 text-emerald-100 rounded-[2rem] h-24 focus:ring-emerald-500/50 resize-none p-5 mt-2 placeholder:text-emerald-500/30"
+                                placeholder="e.g. met at tech conference, follows up next week..."
                             />
                         </div>
 
@@ -231,7 +243,7 @@ export function ReviewScreen({ data: initialData, frontImage, backImage, onSave,
 
                                 <div className="flex gap-3">
                                     <Button
-                                        onClick={() => onSave(data)}
+                                        onClick={handleSave}
                                         variant="outline"
                                         className="flex-1 h-12 border-amber-500/30 text-amber-500 hover:bg-amber-500 hover:text-white font-bold rounded-2xl text-[10px] uppercase tracking-widest transition-all"
                                     >
@@ -250,7 +262,7 @@ export function ReviewScreen({ data: initialData, frontImage, backImage, onSave,
                         <div className="pt-4 mt-auto">
                             {!data.isDuplicate ? (
                                 <>
-                                    <Button onClick={() => onSave(data)} className="w-full h-16 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-lg rounded-3xl shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3">
+                                    <Button onClick={handleSave} className="w-full h-16 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-lg rounded-3xl shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3">
                                         <Check className="w-6 h-6" />
                                         Confirm & Sync
                                     </Button>
