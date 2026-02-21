@@ -50,7 +50,7 @@ BEGIN
                 SELECT id, email, subscription_tier, subscription_status, updated_at 
                 FROM public.profiles 
                 ORDER BY updated_at DESC 
-                LIMIT 10
+                LIMIT 1000
             ) u
         ),
         'recentLeads', (
@@ -59,7 +59,7 @@ BEGIN
                 SELECT id, first_name, last_name, company, created_at 
                 FROM public.leads 
                 ORDER BY created_at DESC 
-                LIMIT 10
+                LIMIT 1000
             ) l
         )
     ) INTO result;
