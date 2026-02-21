@@ -289,27 +289,24 @@ export function LeadsScreen({ onBack }: { onBack: () => void }) {
                                         </div>
                                     ) : (
                                         <div className="flex items-center gap-4">
-                                            {/* Clearbit Logo Generation */}
-                                            {lead.website && (
-                                                <div className="w-12 h-12 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0">
-                                                    {/* We use a simple image tag pointing to Clearbit's free Logo API */}
+                                            {/* Logo Generation */}
+                                            <div className="w-12 h-12 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0 relative">
+                                                {lead.website ? (
                                                     <img
                                                         src={`https://logo.clearbit.com/${lead.website.replace(/^(?:https?:\/\/)?(?:www\.)?/i, "").split('/')[0]}?size=64`}
-                                                        alt={`${lead.company} logo`}
-                                                        className="w-full h-full object-contain"
+                                                        alt={`${lead.company || lead.website} logo`}
+                                                        className="w-full h-full object-contain relative z-10 bg-white"
                                                         onError={(e) => {
-                                                            // Fallback if logo not found: hide the image and show a placeholder div
+                                                            // Hide broken image, letting the absolute fallback div show through
                                                             e.currentTarget.style.display = 'none';
-                                                            if (e.currentTarget.parentElement) {
-                                                                const fallback = document.createElement('div');
-                                                                fallback.className = 'text-slate-500 font-bold text-lg';
-                                                                fallback.innerText = (lead.company || lead.website || "?")[0].toUpperCase();
-                                                                e.currentTarget.parentElement.appendChild(fallback);
-                                                            }
                                                         }}
                                                     />
+                                                ) : null}
+                                                {/* Always present fallback behind the image */}
+                                                <div className="absolute inset-0 flex items-center justify-center text-slate-500 font-bold text-lg uppercase bg-slate-900 z-0">
+                                                    {(lead.company || lead.website || "?")[0]}
                                                 </div>
-                                            )}
+                                            </div>
                                             <div>
                                                 <h3 className="text-lg font-bold text-white leading-tight">
                                                     {lead.first_name} {lead.last_name}
