@@ -414,9 +414,16 @@ export function LeadsScreen({ onBack }: { onBack: () => void }) {
                                                     <Mail className="w-3.5 h-3.5 mr-2" />
                                                     <span>{lead.email}</span>
                                                 </div>
-                                                <button onClick={() => copyToClipboard(lead.email || '')} className="text-slate-600 hover:text-emerald-400 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                                <button onClick={() => copyToClipboard(lead.email || '')} className="text-slate-600 hover:text-emerald-400 opacity-0 group-hover/item:opacity-100 transition-opacity" title="Copy Email">
                                                     <Copy className="w-3 h-3" />
                                                 </button>
+                                                <a
+                                                    href={`mailto:${lead.email}?subject=Great meeting you!&body=Hi ${lead.first_name || 'there'},%0D%0A%0D%0AIt was great connecting recently! Let me know if you'd like to catch up or jump on a quick call.%0D%0A%0D%0ABest,%0D%0A`}
+                                                    className="text-blue-500 hover:text-blue-400 opacity-0 group-hover/item:opacity-100 transition-opacity"
+                                                    title="Draft Email"
+                                                >
+                                                    <MessageCircle className="w-3.5 h-3.5" />
+                                                </a>
                                             </div>
                                         )}
                                         {lead.phone && (

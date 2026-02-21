@@ -68,11 +68,24 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
                 })
                 if (error) throw error
 
-                if (data.session) {
-                    onAuthSuccess()
-                } else if (data.user) {
-                    // This happens if "Confirm Email" is still ON in Supabase
-                    setMessage("Check your email for a confirmation link!")
+                if (data.session || data.user) {
+                    // Trigger Welcome Email
+                    try {
+                        await fetch('/api/email/welcome', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email }),
+                        });
+                    } catch (e) {
+                        console.error('Failed to trigger welcome email', e);
+                    }
+
+                    if (data.session) {
+                        onAuthSuccess()
+                    } else if (data.user) {
+                        // This happens if "Confirm Email" is still ON in Supabase
+                        setMessage("Check your email for a confirmation link!")
+                    }
                 }
             } else {
                 const { error, data } = await supabase.auth.signInWithPassword({
