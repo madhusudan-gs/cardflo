@@ -15,6 +15,7 @@ export function LeadsScreen({ onBack }: { onBack: () => void }) {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editValues, setEditValues] = useState<Partial<Lead>>({});
     const [savingId, setSavingId] = useState<string | null>(null);
+    const [copiedText, setCopiedText] = useState<string | null>(null);
 
     // --- Duplicate detection state ---
     const [showDuplicates, setShowDuplicates] = useState(false);
@@ -87,7 +88,8 @@ export function LeadsScreen({ onBack }: { onBack: () => void }) {
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
-        // Could add a toast here
+        setCopiedText(text);
+        setTimeout(() => setCopiedText(null), 1000); // Fade away after 1 second
     };
 
     const filteredLeads = leads.filter(l =>
@@ -156,7 +158,7 @@ export function LeadsScreen({ onBack }: { onBack: () => void }) {
                     <Button variant="ghost" size="icon" onClick={onBack} className="text-slate-400">
                         <ChevronLeft className="w-6 h-6" />
                     </Button>
-                    <h2 className="text-xl font-bold text-white">My Captured Leads</h2>
+                    <h2 className="text-xl font-bold text-white">My Captured Cards</h2>
                 </div>
                 <div className="flex items-center gap-2">
                     <Button
@@ -520,6 +522,13 @@ export function LeadsScreen({ onBack }: { onBack: () => void }) {
                                 ))
                         )}
                     </main>
+                </div>
+            )}
+            {/* ─── Copy Toast Notification ─────────────────────────── */}
+            {copiedText && (
+                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg border border-slate-700 animate-in fade-in slide-in-from-bottom-2 duration-300 z-50 flex items-center gap-2">
+                    <Check className="w-4 h-4 text-emerald-400" />
+                    Copied to clipboard
                 </div>
             )}
         </div>
