@@ -3,6 +3,40 @@ import { supabase } from './supabase'
 import { CardData, Lead } from './types'
 import { canScan } from './paywall-service'
 
+// --- Duplicate Detection Utilities ---
+
+const norm = (s: string | undefined | null) =>
+    (s || "").trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+
+function leadsMatch(a: Lead, b: Lead): boolean {
+    // Email match
+    const aEmail = (a.email || "").trim().toLowerCase();
+    const bEmail = (b.email || "").trim().toLowerCase();
+    if (aEmail && bEmail && aEmail === bEmail) return true;
+
+    // Phone match (digit only, ≥7 digits overlap)
+    const aPhone = (a.phone || "").replace(/\D/g, '');
+    const bPhone = (b.phone || "").replace(/\D/g, '');
+    if (aPhone.length >= 7 && bPhone.length >= 7 &&
+        (aPhone.includes(bPhone) || bPhone.includes(aPhone))) return true;
+
+    // Name + company match
+    const aFirst = norm(a.first_name); const aLast = norm(a.last_name);
+    const bFirst = norm(b.first_name); const bLast = norm(b.last_name);
+    if (aFirst && aLast && bFirst && bLast) {
+        const nameFull = (f: string, l: string) => f + l;
+        const nameMatch =
+            (aFirst === bFirst && aLast === bLast) ||
+            (aFirst === bLast && aLast === bFirst) ||
+            (nameFull(aFirst, aLast) === nameFull(bFirst, bLast) && nameFull(aFirst, aLast).length > 5);
+        if (nameMatch) {
+            const aC = norm(a.company); const bC = norm(b.company);
+            if (!aC || !bC || aC.includes(bC) || bC.includes(aC)) return true;
+        }
+    }
+    return false;
+}
+
 export async function saveCard(card: CardData, userId: string): Promise<boolean> {
     try {
         // Safety check: ensure user hasn't bypassed UI limits
@@ -219,6 +253,104 @@ export async function checkDuplicateLead(
     } catch (error) {
         console.error('Critical failure in checkDuplicateLead:', error);
         return false;
+    }
+}
+
+/**
+ * Returns the first existing lead that matches the given card data, or null.
+ * Replaces the boolean checkDuplicateLead for richer UI display.
+ */
+export async function getDuplicateMatch(
+    email: string | undefined,
+    firstName: string,
+    lastName: string,
+    userId: string,
+    phone?: string,
+    company?: string
+): Promise<Lead | null> {
+    try {
+        const targetEmail = (email || "").trim().toLowerCase();
+
+        // Step 1: fast email lookup
+        if (targetEmail && targetEmail.includes('@')) {
+            const { data: emailData } = await supabase
+                .from('leads')
+                .select('*')
+                .eq('created_by', userId)
+                .ilike('email', targetEmail)
+                .limit(1)
+                .single();
+            if (emailData) return emailData as Lead;
+        }
+
+        // Step 2: load all leads for phone/name matching
+        const { data, error } = await supabase
+            .from('leads')
+            .select('*')
+            .eq('created_by', userId)
+            .limit(1000);
+
+        if (error || !data || data.length === 0) return null;
+
+        const candidate: Lead = {
+            id: '', created_by: userId,
+            first_name: firstName, last_name: lastName,
+            email: email || null, phone: phone || null,
+            company: company || null,
+            job_title: null, website: null, address: null, notes: null,
+            image_url: null, back_image_url: null,
+            created_at: '', scanned_at: null,
+        };
+
+        for (const lead of data as Lead[]) {
+            if (leadsMatch(candidate, lead)) return lead;
+        }
+
+        return null;
+    } catch (err) {
+        console.error('[getDuplicateMatch] error:', err);
+        return null;
+    }
+}
+
+export interface DuplicatePair {
+    lead: Lead;
+    matchedWith: Lead;
+}
+
+/**
+ * Scans all leads for a user and returns every pair of duplicates found.
+ * Each pair is returned only once (a→b, not also b→a).
+ */
+export async function findAllDuplicates(userId: string): Promise<DuplicatePair[]> {
+    try {
+        const { data, error } = await supabase
+            .from('leads')
+            .select('*')
+            .eq('created_by', userId)
+            .order('created_at', { ascending: true });
+
+        if (error || !data || data.length < 2) return [];
+
+        const leads = data as Lead[];
+        const pairs: DuplicatePair[] = [];
+        const seen = new Set<string>(); // prevent a→b AND b→a
+
+        for (let i = 0; i < leads.length; i++) {
+            for (let j = i + 1; j < leads.length; j++) {
+                const key = `${leads[i].id}::${leads[j].id}`;
+                if (seen.has(key)) continue;
+                if (leadsMatch(leads[i], leads[j])) {
+                    pairs.push({ lead: leads[j], matchedWith: leads[i] }); // newer first
+                    seen.add(key);
+                }
+            }
+        }
+
+        return pairs;
+    } catch (err) {
+        console.error('[findAllDuplicates] error:', err);
+        return [];
     }
 }
 

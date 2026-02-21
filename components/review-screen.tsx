@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button, Input, Label, Textarea } from "@/components/ui/shared";
-import { CardData } from "@/lib/types";
-import { ArrowLeft, Save, Trash2, Check, Sparkles, Database, AlertTriangle } from "lucide-react";
+import { CardData, Lead } from "@/lib/types";
+import { ArrowLeft, Save, Trash2, Check, Sparkles, Database, AlertTriangle, User2, Building2, Mail, Phone } from "lucide-react";
 
 interface ReviewScreenProps {
     data: CardData;
@@ -10,9 +10,10 @@ interface ReviewScreenProps {
     onSave: (data: CardData) => void;
     onCancel: () => void;
     onScanBack: () => void;
+    duplicateMatch?: Lead | null;
 }
 
-export function ReviewScreen({ data: initialData, frontImage, backImage, onSave, onCancel, onScanBack }: ReviewScreenProps) {
+export function ReviewScreen({ data: initialData, frontImage, backImage, onSave, onCancel, onScanBack, duplicateMatch }: ReviewScreenProps) {
     const [data, setData] = useState<CardData>(initialData);
     const [viewingSide, setViewingSide] = useState<"front" | "back">("front");
 
@@ -185,14 +186,49 @@ export function ReviewScreen({ data: initialData, frontImage, backImage, onSave,
                         {data.isDuplicate && (
                             <div className="bg-amber-500/10 border border-amber-500/30 rounded-3xl p-6 space-y-4 animate-in fade-in zoom-in duration-300">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center border border-amber-500/30">
+                                    <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center border border-amber-500/30 flex-shrink-0">
                                         <Database className="w-4 h-4 text-amber-500" />
                                     </div>
                                     <div className="flex flex-col">
                                         <span className="text-sm font-black text-amber-500 uppercase tracking-tight">Potential Duplicate Detected</span>
-                                        <span className="text-[10px] text-amber-500/70 font-bold uppercase">Email or name already exists in database</span>
+                                        <span className="text-[10px] text-amber-500/70 font-bold uppercase">Already exists in your database</span>
                                     </div>
                                 </div>
+
+                                {/* Show the matched lead's details */}
+                                {duplicateMatch && (
+                                    <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 space-y-2">
+                                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-500/60 mb-3">Matched Record</p>
+                                        <div className="flex items-center gap-2 text-xs text-amber-400/80">
+                                            <User2 className="w-3.5 h-3.5 flex-shrink-0 text-amber-500/50" />
+                                            <span className="font-bold">{[duplicateMatch.first_name, duplicateMatch.last_name].filter(Boolean).join(' ') || 'Unknown Name'}</span>
+                                        </div>
+                                        {duplicateMatch.company && (
+                                            <div className="flex items-center gap-2 text-xs text-amber-400/70">
+                                                <Building2 className="w-3.5 h-3.5 flex-shrink-0 text-amber-500/50" />
+                                                <span>{duplicateMatch.company}</span>
+                                            </div>
+                                        )}
+                                        {duplicateMatch.email && (
+                                            <div className="flex items-center gap-2 text-xs text-amber-400/70">
+                                                <Mail className="w-3.5 h-3.5 flex-shrink-0 text-amber-500/50" />
+                                                <span className="truncate">{duplicateMatch.email}</span>
+                                            </div>
+                                        )}
+                                        {duplicateMatch.phone && (
+                                            <div className="flex items-center gap-2 text-xs text-amber-400/70">
+                                                <Phone className="w-3.5 h-3.5 flex-shrink-0 text-amber-500/50" />
+                                                <span>{duplicateMatch.phone}</span>
+                                            </div>
+                                        )}
+                                        <p className="text-[9px] text-amber-500/50 pt-1">
+                                            Added {duplicateMatch.scanned_at
+                                                ? new Date(duplicateMatch.scanned_at).toLocaleDateString()
+                                                : new Date(duplicateMatch.created_at).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                )}
+
                                 <div className="flex gap-3">
                                     <Button
                                         onClick={() => onSave(data)}

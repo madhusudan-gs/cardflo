@@ -66,7 +66,10 @@ export async function extractCardData(
     - If obstructed, set "isPartial" to true.
 
     FORMATTING RULES:
-    - PHONE: Always start with a single quote (') followed by the number (e.g., '+1 555 123 4567').
+    - PHONE: STRICTLY E.164 FORMAT (e.g., '+14155552671'). 
+      - If country code is missing, YOU MUST DEDUCE IT from the address or email domain on the card.
+      - Example: Address contains 'London, UK' -> Prefix +44. Address contains 'Bangalore, India' -> Prefix +91.
+      - If invalid/ambiguous, return empty string. NO formatting chars allowed.
     - NOTES: Write a 1-sentence professional summary describing the person's role or company specialization.
     - EMPTY FIELDS: If a piece of info is not on the card, return an empty string. DO NOT HALLUCINATE.`;
 

@@ -189,3 +189,35 @@ BEGIN
 END;
 $$;
 ```
+
+## 3. Custom Limit Support
+(ENABLES custom_scan_limit on profiles - RUN THIS FIRST if getting errors)
+
+```sql
+ADD COLUMN IF NOT EXISTS custom_scan_limit integer DEFAULT NULL;
+```
+
+## 4. Data Cleaning (Phone Numbers)
+(Strips non-digits, enforces E.164, converts 10-digit to +91)
+
+```sql
+-- 1. Aggressive Clean: Remove all characters except digits (0-9) and plus sign (+)
+UPDATE public.leads
+SET phone = regexp_replace(phone, '[^0-9+]', '', 'g')
+WHERE phone IS NOT NULL;
+
+-- 2. Smart Fix: Convert 10-digit numbers (missing country code) to +91
+-- If the cleaned number is exactly 10 digits (no plus), we assume it's an Indian number (+91)
+UPDATE public.leads
+SET phone = '+91' || phone
+WHERE phone ~ '^[0-9]{10}$';
+
+-- 3. Strict Validation: Discard invalid E.164 numbers
+-- E.164 must start with '+' and have 10-15 digits total.
+-- If it doesn't match this pattern, we clear the field (discard).
+UPDATE public.leads
+SET phone = NULL
+WHERE phone IS NOT NULL 
+AND phone !~ '^\+[0-9]{10,15}$';
+```
+

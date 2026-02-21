@@ -5,7 +5,7 @@ import { AppStatus, CardData } from "@/lib/types";
 import { ReferralUI } from "@/components/referral-ui";
 import { extractCardData } from "@/lib/gemini";
 import { AdminDashboard } from "@/components/admin-dashboard";
-import { saveCard, getStats, saveDraft, deleteDraft, checkDuplicateLead } from "@/lib/supabase-service";
+import { saveCard, getStats, saveDraft, deleteDraft, getDuplicateMatch } from "@/lib/supabase-service";
 import { canScan, incrementUsage } from "@/lib/paywall-service";
 import { AuthScreen } from "@/components/auth-screen";
 import { ScannerScreen } from "@/components/scanner-screen";
@@ -17,6 +17,7 @@ import { Loader2, Zap, LogOut, Database, CreditCard, Gift, ShieldCheck, ChevronD
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
 import { SubscriptionTier, getUserUsage, getUserProfile } from "@/lib/paywall-service";
+import { Lead } from "@/lib/types";
 
 export default function CardfloApp() {
     const [status, setStatus] = useState<AppStatus>("AUTHENTICATING");
@@ -27,6 +28,7 @@ export default function CardfloApp() {
     const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
     const [stats, setStats] = useState<{ today: number, total: number }>({ today: 0, total: 0 });
     const [isIgnoringDuplicate, setIsIgnoringDuplicate] = useState(false);
+    const [duplicateMatch, setDuplicateMatch] = useState<Lead | null>(null);
     const [subscriptionTier, setSubscriptionTier] = useState<SubscriptionTier>("starter");
     const [usageStats, setUsageStats] = useState<{ count: number; bonus: number }>({ count: 0, bonus: 0 });
     const [referralCode, setReferralCode] = useState<string>("");
@@ -152,8 +154,8 @@ export default function CardfloApp() {
             const data = await extractCardData(imageBase64, apiKey);
             console.log("CardfloApp: Extraction successful", data);
 
-            // Per User Requirement: Check for duplicates IMMEDIATELY after extraction (Draft Phase)
-            const hasDuplicate = await checkDuplicateLead(
+            // Per User Requirement: Get matched lead for display in ReviewScreen
+            const matchedLead = await getDuplicateMatch(
                 data.email,
                 data.firstName,
                 data.lastName,
@@ -164,8 +166,10 @@ export default function CardfloApp() {
 
             const cardWithDupeStatus = {
                 ...data,
-                isDuplicate: hasDuplicate
+                isDuplicate: !!matchedLead
             };
+
+            setDuplicateMatch(matchedLead);
 
             // Save as draft immediately for persistence/confirmation step
             if (session?.user.id) {
@@ -233,6 +237,7 @@ export default function CardfloApp() {
         setCurrentCard(null);
         setFrontImage(null);
         setBackImage(null);
+        setDuplicateMatch(null);
         setStatus("IDLE");
     };
 
@@ -298,6 +303,7 @@ export default function CardfloApp() {
                 onSave={handleSave}
                 onCancel={handleDiscard}
                 onScanBack={() => setStatus("SCANNING")}
+                duplicateMatch={duplicateMatch}
             />
         );
     }

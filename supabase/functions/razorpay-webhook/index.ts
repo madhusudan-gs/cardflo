@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Razorpay Webhook Edge Function
 // Deploy via Supabase Dashboard → Edge Functions → "razorpay-webhook"
 

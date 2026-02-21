@@ -27,6 +27,7 @@ export interface Database {
                     referral_code: string | null
                     team_id: string | null
                     is_admin: boolean | null
+                    custom_scan_limit: number | null
                 }
                 Insert: {
                     id: string

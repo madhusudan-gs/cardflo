@@ -93,7 +93,8 @@ export async function canScan(userId: string): Promise<{ allowed: boolean; reaso
 
         const totalScans = usage.scans_count || 0;
         const bonusScans = usage.bonus_scans_remaining || 0;
-        const totalLimit = config.scanLimit + bonusScans;
+        const limitConfig = (profile as any).custom_scan_limit ?? config.scanLimit;
+        const totalLimit = limitConfig + bonusScans;
 
         if (totalScans >= totalLimit) {
             return { allowed: false, reason: 'limit_reached' };
