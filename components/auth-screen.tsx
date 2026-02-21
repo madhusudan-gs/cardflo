@@ -67,19 +67,7 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
                     password,
                 })
                 if (error) throw error
-
                 if (data.session || data.user) {
-                    // Trigger Welcome Email
-                    try {
-                        await fetch('/api/email/welcome', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email }),
-                        });
-                    } catch (e) {
-                        console.error('Failed to trigger welcome email', e);
-                    }
-
                     if (data.session) {
                         onAuthSuccess()
                     } else if (data.user) {

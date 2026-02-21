@@ -106,6 +106,20 @@ export default function CardfloApp() {
                     setIsAdmin(false);
                     setUserRole('none');
                 }
+
+                // Check if we need to send the post-verification onboarding email
+                if (profile && !(profile as any)?.welcome_email_sent) {
+                    console.log("Triggering onboarding post-verification email...");
+                    fetch('/api/email/post-verify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: session.user.email })
+                    }).then(() => {
+                        supabase.from('profiles').update({ welcome_email_sent: true }).eq('id', session.user.id).then(
+                            ({ error }) => { if (error) console.error("Failed to mark email as sent", error); }
+                        );
+                    }).catch(console.error);
+                }
             });
             refreshUsage(session.user.id);
         }

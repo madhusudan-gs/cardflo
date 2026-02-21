@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { sendWelcomeEmail } from '@/lib/email-service';
+import { sendPostVerificationEmail } from '@/lib/email-service';
 
 export async function POST(req: Request) {
     try {
@@ -10,7 +10,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Email is required' }, { status: 400 });
         }
 
-        const result = await sendWelcomeEmail(email, name || 'there');
+        const result = await sendPostVerificationEmail(email, name || 'there');
 
         if (!result.success) {
             return NextResponse.json({ error: result.error }, { status: 500 });
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: true, data: result.data });
 
     } catch (error: any) {
-        console.error('API Route Error /email/welcome:', error);
+        console.error('API Route Error /email/post-verify:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

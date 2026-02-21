@@ -28,6 +28,7 @@ export interface Database {
                     team_id: string | null
                     is_admin: boolean | null
                     custom_scan_limit: number | null
+                    welcome_email_sent: boolean | null
                 }
                 Insert: {
                     id: string
@@ -45,6 +46,7 @@ export interface Database {
                     referral_code?: string | null
                     team_id?: string | null
                     is_admin?: boolean | null
+                    welcome_email_sent?: boolean | null
                 }
                 Update: {
                     id?: string
@@ -62,6 +64,7 @@ export interface Database {
                     referral_code?: string | null
                     team_id?: string | null
                     is_admin?: boolean | null
+                    welcome_email_sent?: boolean | null
                 }
                 Relationships: []
             }
