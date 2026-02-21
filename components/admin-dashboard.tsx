@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/shared";
-import { ChevronLeft, Users, Database, CreditCard, Activity, Loader2, Ticket, Plus, Trash2, ShieldAlert, Lock, Unlock } from "lucide-react";
+import { ChevronLeft, Users, Database, CreditCard, Activity, Loader2, Ticket, Plus, Trash2, ShieldAlert, Lock, Unlock, Search } from "lucide-react";
 import { toggleRegistrations, getGlobalSettings } from "@/lib/paywall-service";
 
 export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
@@ -33,6 +33,7 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
     });
     const [loading, setLoading] = useState(true);
     const [view, setView] = useState<'stats' | 'users' | 'leads' | 'coupons'>('stats');
+    const [searchTerm, setSearchTerm] = useState("");
 
     // Coupon-specific state
     const [coupons, setCoupons] = useState<any[]>([]);
@@ -340,16 +341,35 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
                 )}
 
                 {view === 'leads' && (
-                    <div className="space-y-3">
-                        {(stats.recentLeads as any[]).map((l: any) => (
-                            <div key={l.id} className="bg-slate-900/50 border border-slate-800/50 p-4 rounded-2xl">
-                                <div className="flex justify-between items-start">
-                                    <p className="text-[10px] font-bold text-white">{l.first_name} {l.last_name}</p>
-                                    <p className="text-[8px] text-slate-500 font-mono italic">{new Date(l.created_at).toLocaleDateString()}</p>
-                                </div>
-                                <p className="text-[9px] text-slate-400 font-medium mt-0.5 uppercase tracking-wide">{l.company || 'Private Lead'}</p>
-                            </div>
-                        ))}
+                    <div className="space-y-4">
+                        <div className="relative group">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
+                            <input
+                                type="text"
+                                placeholder="Smart search names, companies..."
+                                className="w-full bg-slate-900 border-slate-800 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all text-white"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        <div className="space-y-3">
+                            {(stats.recentLeads as any[])
+                                .filter(l => {
+                                    if (!searchTerm) return true;
+                                    const searchWords = searchTerm.toLowerCase().split(/\s+/).filter(word => word.length > 0);
+                                    const leadString = `${l.first_name || ""} ${l.last_name || ""} ${l.company || ""}`.toLowerCase();
+                                    return searchWords.every(word => leadString.includes(word));
+                                })
+                                .map((l: any) => (
+                                    <div key={l.id} className="bg-slate-900/50 border border-slate-800/50 p-4 rounded-2xl">
+                                        <div className="flex justify-between items-start">
+                                            <p className="text-[10px] font-bold text-white">{l.first_name} {l.last_name}</p>
+                                            <p className="text-[8px] text-slate-500 font-mono italic">{new Date(l.created_at).toLocaleDateString()}</p>
+                                        </div>
+                                        <p className="text-[9px] text-slate-400 font-medium mt-0.5 uppercase tracking-wide">{l.company || 'Private Lead'}</p>
+                                    </div>
+                                ))}
+                        </div>
                     </div>
                 )}
 
