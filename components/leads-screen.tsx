@@ -80,6 +80,32 @@ export function LeadsScreen({ onBack }: { onBack: () => void }) {
         ));
     };
 
+    const handleSmartMerge = async (newerLead: Lead, olderLead: Lead) => {
+        const mergedValues: Partial<Lead> = {
+            first_name: newerLead.first_name || olderLead.first_name,
+            last_name: newerLead.last_name || olderLead.last_name,
+            company: newerLead.company || olderLead.company,
+            job_title: newerLead.job_title || olderLead.job_title,
+            email: newerLead.email || olderLead.email,
+            phone: newerLead.phone || olderLead.phone,
+            website: newerLead.website || olderLead.website,
+            address: newerLead.address || olderLead.address,
+            notes: [newerLead.notes, olderLead.notes].filter(Boolean).join('\n---\n') || null,
+        };
+
+        const success = await updateLead(newerLead.id, mergedValues);
+        if (success) {
+            setLeads(prev => prev.map(l => l.id === newerLead.id ? { ...l, ...mergedValues } as Lead : l));
+            await deleteLead(olderLead.id, true);
+            setDuplicatePairs(prev => prev.filter(
+                p => p.lead.id !== olderLead.id && p.matchedWith.id !== olderLead.id &&
+                    p.lead.id !== newerLead.id && p.matchedWith.id !== newerLead.id
+            ));
+        } else {
+            alert("Failed to merge leads.");
+        }
+    };
+
     const handleDismissPair = (lead: Lead, matchedWith: Lead) => {
         const key = [lead.id, matchedWith.id].sort().join('::');
         setDismissedPairs(prev => new Set(Array.from(prev).concat(key)));
@@ -524,19 +550,26 @@ export function LeadsScreen({ onBack }: { onBack: () => void }) {
                                         </div>
 
                                         {/* Action buttons */}
-                                        <div className="grid grid-cols-3 gap-1 p-3 border-t border-slate-800/50">
+                                        <div className="grid grid-cols-4 gap-1 p-3 border-t border-slate-800/50">
+                                            <button
+                                                onClick={() => handleSmartMerge(pair.lead, pair.matchedWith)}
+                                                className="flex flex-col items-center gap-1 py-2 px-1 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-400 transition-all"
+                                            >
+                                                <GitMerge className="w-4 h-4" />
+                                                <span className="text-[9px] font-black uppercase tracking-wider">Smart Merge</span>
+                                            </button>
                                             <button
                                                 onClick={() => handleMerge(pair.lead.id, pair.matchedWith.id)}
                                                 className="flex flex-col items-center gap-1 py-2 px-1 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 transition-all"
                                             >
-                                                <GitMerge className="w-4 h-4" />
+                                                <Check className="w-4 h-4" />
                                                 <span className="text-[9px] font-black uppercase tracking-wider">Keep Newer</span>
                                             </button>
                                             <button
                                                 onClick={() => handleMerge(pair.matchedWith.id, pair.lead.id)}
                                                 className="flex flex-col items-center gap-1 py-2 px-1 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 transition-all"
                                             >
-                                                <GitMerge className="w-4 h-4" />
+                                                <Check className="w-4 h-4" />
                                                 <span className="text-[9px] font-black uppercase tracking-wider">Keep Older</span>
                                             </button>
                                             <button
