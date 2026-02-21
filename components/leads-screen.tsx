@@ -92,9 +92,15 @@ export function LeadsScreen({ onBack }: { onBack: () => void }) {
         setTimeout(() => setCopiedText(null), 1000); // Fade away after 1 second
     };
 
-    const filteredLeads = leads.filter(l =>
-        `${l.first_name} ${l.last_name} ${l.company} ${l.email} ${l.notes}`.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredLeads = leads.filter(l => {
+        if (!searchTerm) return true;
+
+        // Smart Search: Ensure ALL words in the search term exist somewhere in the lead data
+        const searchWords = searchTerm.toLowerCase().split(/\s+/).filter(word => word.length > 0);
+        const leadString = `${l.first_name} ${l.last_name} ${l.company} ${l.email} ${l.notes} ${l.job_title} ${l.address}`.toLowerCase();
+
+        return searchWords.every(word => leadString.includes(word));
+    });
 
     const handleStartEdit = (lead: Lead) => {
         setEditingId(lead.id);
@@ -256,13 +262,36 @@ export function LeadsScreen({ onBack }: { onBack: () => void }) {
                                             </div>
                                         </div>
                                     ) : (
-                                        <>
-                                            <h3 className="text-lg font-bold text-white leading-tight">
-                                                {lead.first_name} {lead.last_name}
-                                            </h3>
-                                            <p className="text-emerald-400 text-sm font-medium">{lead.job_title}</p>
-                                            <p className="text-slate-400 text-xs font-bold uppercase tracking-tight mt-1">{lead.company}</p>
-                                        </>
+                                        <div className="flex items-center gap-4">
+                                            {/* Clearbit Logo Generation */}
+                                            {lead.website && (
+                                                <div className="w-12 h-12 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0">
+                                                    {/* We use a simple image tag pointing to Clearbit's free Logo API */}
+                                                    <img
+                                                        src={`https://logo.clearbit.com/${lead.website.replace(/^(?:https?:\/\/)?(?:www\.)?/i, "").split('/')[0]}?size=64`}
+                                                        alt={`${lead.company} logo`}
+                                                        className="w-full h-full object-contain"
+                                                        onError={(e) => {
+                                                            // Fallback if logo not found: hide the image and show a placeholder div
+                                                            e.currentTarget.style.display = 'none';
+                                                            if (e.currentTarget.parentElement) {
+                                                                const fallback = document.createElement('div');
+                                                                fallback.className = 'text-slate-500 font-bold text-lg';
+                                                                fallback.innerText = (lead.company || lead.website || "?")[0].toUpperCase();
+                                                                e.currentTarget.parentElement.appendChild(fallback);
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+                                            )}
+                                            <div>
+                                                <h3 className="text-lg font-bold text-white leading-tight">
+                                                    {lead.first_name} {lead.last_name}
+                                                </h3>
+                                                <p className="text-emerald-400 text-sm font-medium">{lead.job_title}</p>
+                                                <p className="text-slate-400 text-xs font-bold uppercase tracking-tight mt-1">{lead.company}</p>
+                                            </div>
+                                        </div>
                                     )}
                                 </div>
                                 <div className="flex space-x-1">
