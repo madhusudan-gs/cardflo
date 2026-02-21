@@ -194,7 +194,7 @@ $$;
 (ENABLES custom_scan_limit on profiles - RUN THIS FIRST if getting errors)
 
 ```sql
-ADD COLUMN IF NOT EXISTS custom_scan_limit integer DEFAULT NULL;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS custom_scan_limit integer DEFAULT NULL;
 ```
 
 ## 4. Data Cleaning (Phone Numbers)
