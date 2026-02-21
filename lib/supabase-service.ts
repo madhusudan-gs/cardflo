@@ -46,6 +46,36 @@ export async function saveCard(card: CardData, userId: string): Promise<boolean>
             throw new Error(reason === 'limit_reached' ? 'Scan limit reached. Please upgrade your plan.' : 'Unauthorized scan attempt.');
         }
 
+        let logoUrl: string | undefined = undefined;
+
+        // Extract and upload logo if present
+        if (card.logo_fallback_base64) {
+            try {
+                // Remove data:image/jpeg;base64, prefix
+                const base64Data = card.logo_fallback_base64.replace(/^data:image\/\w+;base64,/, "");
+                const buffer = Buffer.from(base64Data, 'base64');
+                const fileName = `logo_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('card_images')
+                    .upload(`${userId}/${fileName}`, buffer, {
+                        contentType: 'image/jpeg',
+                        upsert: false
+                    });
+
+                if (uploadError) {
+                    console.error("Failed to upload cropped logo:", uploadError);
+                } else if (uploadData) {
+                    const { data: publicUrlData } = supabase.storage
+                        .from('card_images')
+                        .getPublicUrl(`${userId}/${fileName}`);
+                    logoUrl = publicUrlData.publicUrl;
+                }
+            } catch (err) {
+                console.error("Error processing logo base64 upload:", err);
+            }
+        }
+
         const { error } = await supabase
             .from('leads')
             .insert({
@@ -61,6 +91,7 @@ export async function saveCard(card: CardData, userId: string): Promise<boolean>
                 notes: card.notes?.trim(),
                 image_url: card.imageUrl,
                 back_image_url: card.backImage,
+                logo_fallback_url: logoUrl,
                 scanned_at: card.scannedAt || new Date().toISOString(),
             })
 

@@ -18,6 +18,7 @@ import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
 import { SubscriptionTier, getUserUsage, getUserProfile } from "@/lib/paywall-service";
 import { Lead } from "@/lib/types";
+import { cropLogoFromImage } from "@/lib/image-utils";
 
 export default function CardfloApp() {
     const [status, setStatus] = useState<AppStatus>("AUTHENTICATING");
@@ -183,13 +184,26 @@ export default function CardfloApp() {
 
             setDuplicateMatch(matchedLead);
 
+            // Attempt to crop the logo if coordinates were found
+            let finalCardData = cardWithDupeStatus;
+            if (data.logo_box && data.logo_box.length === 4) {
+                console.log("CardfloApp: Cropping logo from scan...");
+                const croppedLogoBase64 = await cropLogoFromImage(imageBase64, data.logo_box);
+                if (croppedLogoBase64) {
+                    finalCardData = {
+                        ...finalCardData,
+                        logo_fallback_base64: croppedLogoBase64
+                    };
+                }
+            }
+
             // Save as draft immediately for persistence/confirmation step
             if (session?.user.id) {
-                const draftId = await saveDraft(cardWithDupeStatus, session.user.id);
+                const draftId = await saveDraft(finalCardData, session.user.id);
                 setCurrentDraftId(draftId);
             }
 
-            setCurrentCard(cardWithDupeStatus);
+            setCurrentCard(finalCardData);
             setStatus("REVIEWING");
         } catch (err: any) {
             console.error("CardfloApp: Extraction error", err);

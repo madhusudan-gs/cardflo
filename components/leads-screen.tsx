@@ -291,20 +291,34 @@ export function LeadsScreen({ onBack }: { onBack: () => void }) {
                                         <div className="flex items-center gap-4">
                                             {/* Logo Generation */}
                                             <div className="w-12 h-12 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0 relative">
+                                                {/* 1. Try Clearbit if website exists */}
                                                 {lead.website ? (
                                                     <img
                                                         src={`https://logo.clearbit.com/${lead.website.replace(/^(?:https?:\/\/)?(?:www\.)?/i, "").split('/')[0]}?size=64`}
                                                         alt={`${lead.company || lead.website} logo`}
-                                                        className="w-full h-full object-contain relative z-10 bg-white"
+                                                        className="w-full h-full object-contain relative z-20 bg-white"
                                                         onError={(e) => {
-                                                            // Hide broken image, letting the absolute fallback div show through
+                                                            // Hide broken image, letting the fallback beneath show through
                                                             e.currentTarget.style.display = 'none';
                                                         }}
                                                     />
                                                 ) : null}
-                                                {/* Always present fallback behind the image */}
+
+                                                {/* 2. Try the cropped fallback from the business card scan */}
+                                                {lead.logo_fallback_url ? (
+                                                    <img
+                                                        src={lead.logo_fallback_url}
+                                                        alt={`${lead.company || lead.first_name} extracted logo`}
+                                                        className="w-full h-full object-contain relative z-10 bg-white p-1"
+                                                        onError={(e) => {
+                                                            e.currentTarget.style.display = 'none';
+                                                        }}
+                                                    />
+                                                ) : null}
+
+                                                {/* 3. Always present text initial fallback behind all images */}
                                                 <div className="absolute inset-0 flex items-center justify-center text-slate-500 font-bold text-lg uppercase bg-slate-900 z-0">
-                                                    {(lead.company || lead.website || "?")[0]}
+                                                    {(lead.company || lead.website || lead.first_name || "?")[0]}
                                                 </div>
                                             </div>
                                             <div>

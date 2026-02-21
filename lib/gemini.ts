@@ -71,6 +71,7 @@ export async function extractCardData(
       - Example: Address contains 'London, UK' -> Prefix +44. Address contains 'Bangalore, India' -> Prefix +91.
       - If invalid/ambiguous, return empty string. NO formatting chars allowed.
     - NOTES: Write a 1-sentence professional summary describing the person's role or company specialization.
+    - LOGO BOX: Locate the most prominent company logo on the card. Return its bounding box coordinates as [ymin, xmin, ymax, xmax]. Values MUST be integers normalized to 1000 (e.g., [150, 200, 300, 450]). If NO logo is visible, do not return the logo_box property.
     - EMPTY FIELDS: If a piece of info is not on the card, return an empty string. DO NOT HALLUCINATE.`;
 
     try {
@@ -91,6 +92,11 @@ export async function extractCardData(
                         address: { type: SchemaType.STRING },
                         notes: { type: SchemaType.STRING },
                         isPartial: { type: SchemaType.BOOLEAN, description: "Set true if fingers, objects, or glare obscure any text." },
+                        logo_box: {
+                            type: SchemaType.ARRAY,
+                            items: { type: SchemaType.INTEGER },
+                            description: "Bounding box [ymin, xmin, ymax, xmax] normalized to 1000"
+                        },
                     },
                     required: ["firstName", "lastName", "company", "email", "isPartial"],
                 },
