@@ -56,7 +56,7 @@ BEGIN
         'recentLeads', (
             SELECT json_agg(l)
             FROM (
-                SELECT id, first_name, last_name, company, created_at 
+                SELECT *
                 FROM public.leads 
                 ORDER BY created_at DESC 
                 LIMIT 1000

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/shared";
-import { ChevronLeft, Users, Database, CreditCard, Activity, Loader2, Ticket, Plus, Trash2, ShieldAlert, Lock, Unlock, Search } from "lucide-react";
+import { ChevronLeft, Users, Database, CreditCard, Activity, Loader2, Ticket, Plus, Trash2, ShieldAlert, Lock, Unlock, Search, Mail, Phone, ExternalLink, MapPin } from "lucide-react";
 import { toggleRegistrations, getGlobalSettings } from "@/lib/paywall-service";
 
 export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
@@ -34,6 +34,7 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
     const [loading, setLoading] = useState(true);
     const [view, setView] = useState<'stats' | 'users' | 'leads' | 'coupons'>('stats');
     const [searchTerm, setSearchTerm] = useState("");
+    const [expandedLeadId, setExpandedLeadId] = useState<string | null>(null);
 
     // Coupon-specific state
     const [coupons, setCoupons] = useState<any[]>([]);
@@ -357,16 +358,58 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
                                 .filter(l => {
                                     if (!searchTerm) return true;
                                     const searchWords = searchTerm.toLowerCase().split(/\s+/).filter(word => word.length > 0);
-                                    const leadString = `${l.first_name || ""} ${l.last_name || ""} ${l.company || ""}`.toLowerCase();
+                                    const leadString = `${l.first_name || ""} ${l.last_name || ""} ${l.company || ""} ${l.email || ""} ${l.notes || ""}`.toLowerCase();
                                     return searchWords.every(word => leadString.includes(word));
                                 })
                                 .map((l: any) => (
-                                    <div key={l.id} className="bg-slate-900/50 border border-slate-800/50 p-4 rounded-2xl">
+                                    <div
+                                        key={l.id}
+                                        onClick={() => setExpandedLeadId(expandedLeadId === l.id ? null : l.id)}
+                                        className="bg-slate-900/50 border border-slate-800/50 p-4 rounded-2xl cursor-pointer hover:border-emerald-500/50 transition-all"
+                                    >
                                         <div className="flex justify-between items-start">
                                             <p className="text-[10px] font-bold text-white">{l.first_name} {l.last_name}</p>
                                             <p className="text-[8px] text-slate-500 font-mono italic">{new Date(l.created_at).toLocaleDateString()}</p>
                                         </div>
                                         <p className="text-[9px] text-slate-400 font-medium mt-0.5 uppercase tracking-wide">{l.company || 'Private Lead'}</p>
+
+                                        {expandedLeadId === l.id && (
+                                            <div className="mt-4 pt-4 border-t border-slate-800/50 space-y-2 animate-in slide-in-from-top-2 duration-200">
+                                                {l.job_title && (
+                                                    <p className="text-xs text-slate-300"><span className="text-[9px] text-slate-500 uppercase font-black tracking-widest block mb-0.5">Title</span> {l.job_title}</p>
+                                                )}
+                                                {l.email && (
+                                                    <div className="flex items-center text-xs text-slate-300">
+                                                        <Mail className="w-3.5 h-3.5 mr-2 text-slate-500" />
+                                                        {l.email}
+                                                    </div>
+                                                )}
+                                                {l.phone && (
+                                                    <div className="flex items-center text-xs text-slate-300">
+                                                        <Phone className="w-3.5 h-3.5 mr-2 text-slate-500" />
+                                                        {l.phone}
+                                                    </div>
+                                                )}
+                                                {l.website && (
+                                                    <div className="flex items-center text-xs text-slate-300">
+                                                        <ExternalLink className="w-3.5 h-3.5 mr-2 text-slate-500" />
+                                                        {l.website}
+                                                    </div>
+                                                )}
+                                                {l.address && (
+                                                    <div className="flex items-start text-xs text-slate-300">
+                                                        <MapPin className="w-3.5 h-3.5 mr-2 mt-0.5 text-slate-500 flex-shrink-0" />
+                                                        <span className="leading-relaxed">{l.address}</span>
+                                                    </div>
+                                                )}
+                                                {l.notes && (
+                                                    <div className="mt-3 bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                                        <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-1">Notes</p>
+                                                        <p className="text-xs text-slate-300 italic">"{l.notes}"</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                         </div>
