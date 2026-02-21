@@ -13,7 +13,7 @@ import { ReviewScreen } from "@/components/review-screen";
 import { LeadsScreen } from "@/components/leads-screen";
 import { PaywallUI } from "@/components/paywall-ui";
 import { Button } from "@/components/ui/shared";
-import { Loader2, Zap, LogOut, Database, CreditCard, Gift, ShieldCheck, ChevronDown } from "lucide-react";
+import { Loader2, Zap, LogOut, Contact, CreditCard, Gift, ShieldCheck, ChevronDown } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
 import { SubscriptionTier, getUserUsage, getUserProfile } from "@/lib/paywall-service";
@@ -389,7 +389,7 @@ export default function CardfloApp() {
                     className="text-slate-500 hover:text-emerald-400 flex items-center space-x-2 px-3"
                     onClick={() => setStatus("LEADS")}
                 >
-                    <Database className="w-4 h-4" />
+                    <Contact className="w-4 h-4" />
                     <span className="text-xs font-bold uppercase tracking-widest">My Cards</span>
                 </Button>
                 <Button variant="ghost" size="icon" onClick={handleSignOut} className="text-slate-500 hover:text-white">
