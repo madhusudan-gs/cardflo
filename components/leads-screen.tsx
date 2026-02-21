@@ -164,7 +164,7 @@ export function LeadsScreen({ onBack }: { onBack: () => void }) {
                     <Button variant="ghost" size="icon" onClick={onBack} className="text-slate-400">
                         <ChevronLeft className="w-6 h-6" />
                     </Button>
-                    <h2 className="text-xl font-bold text-white">My Captured Cards</h2>
+                    <h2 className="text-xl font-bold text-white">My Cards</h2>
                 </div>
                 <div className="flex items-center gap-2">
                     <Button
