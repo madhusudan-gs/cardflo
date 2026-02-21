@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { AppStatus, CardData } from "@/lib/types";
 import { ReferralUI } from "@/components/referral-ui";
-import { extractCardData } from "@/lib/gemini";
+import { extractCardData, enrichWithBackImage } from "@/lib/gemini";
 import { AdminDashboard } from "@/components/admin-dashboard";
 import { saveCard, getStats, saveDraft, deleteDraft, getDuplicateMatch } from "@/lib/supabase-service";
 import { canScan, incrementUsage } from "@/lib/paywall-service";
@@ -142,8 +142,20 @@ export default function CardfloApp() {
 
         // If we are already reviewing a card, this must be the back side
         if (currentCard) {
-            setBackImage(imageBase64);
-            setStatus("REVIEWING");
+            try {
+                console.log("CardfloApp: Sending back side to Gemini for enrichment...");
+                const enrichedData = await enrichWithBackImage(currentCard, imageBase64, apiKey);
+                console.log("CardfloApp: Enrichment successful", enrichedData);
+                setCurrentCard(enrichedData);
+                setBackImage(imageBase64);
+                setStatus("REVIEWING");
+            } catch (err: any) {
+                console.error("CardfloApp: Enrichment error", err);
+                // Gracefully fallback to just saving the image if AI fails
+                setBackImage(imageBase64);
+                setStatus("REVIEWING");
+                alert(`Back Side AI Error: ${err.message || "Could not extract text from back."}`);
+            }
             return;
         }
 

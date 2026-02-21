@@ -107,3 +107,61 @@ export async function extractCardData(
         throw new Error(e.message || "Formulation Failed: The AI could not reliably structure the card data.");
     }
 }
+
+export async function enrichWithBackImage(
+    existingData: CardData,
+    backImageBase64: string,
+    apiKey: string
+): Promise<CardData> {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+        model: "gemini-3-pro-preview",
+        systemInstruction: `You are a professional business card AI assistant.
+Your goal is to extract ALL relevant keywords, services, and extra context from the BACK side of a business card.
+You will be given the data already extracted from the front side.
+Return a JSON containing only the UPDATED 'notes' field.
+In the 'notes' field, combine the existing notes with new keywords and summaries found on the back. Make it highly searchable and comprehensive.`
+    });
+
+    const prompt = `EXPERT DATA EXTRACTION: Read the BACK of this business card.
+    
+    Front Side Data Already Extracted:
+    ${JSON.stringify(existingData, null, 2)}
+    
+    INSTRUCTIONS:
+    - Carefully read all text, services, taglines, branch locations, and keywords from the back image.
+    - Append this new information to the existing 'notes' field in a professional, concise format.
+    - If the back is blank or contains no new useful info, return exactly the same 'notes' string.
+    
+    Return exactly this JSON schema: { "notes": string }`;
+
+    try {
+        const result = await model.generateContent({
+            contents: [{ role: "user", parts: [{ text: prompt }, { inlineData: { data: backImageBase64.split(",")[1], mimeType: "image/jpeg" } }] }],
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: SchemaType.OBJECT,
+                    properties: {
+                        notes: { type: SchemaType.STRING },
+                    },
+                    required: ["notes"],
+                },
+            },
+        });
+
+        const response = await result.response;
+        const text = response.text();
+        console.log("Gemini Backside Enrichment Response:", text);
+        const newData = JSON.parse(cleanJSON(text));
+
+        return {
+            ...existingData,
+            notes: newData.notes || existingData.notes
+        };
+    } catch (e: any) {
+        console.error("Gemini Enrichment Error Details:", e);
+        // On failure, just return the existing data gracefully
+        return existingData;
+    }
+}
