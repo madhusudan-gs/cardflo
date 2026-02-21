@@ -2,13 +2,23 @@ import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe-server';
 import { PAYMENT_CONFIG } from '@/lib/payment-config';
 import { SubscriptionTier } from '@/lib/paywall-service';
+import { createClient } from '@/lib/supabase-server';
 
 export async function POST(req: Request) {
     try {
-        const { tier, userId, email } = await req.json();
+        const supabase = createClient();
+        const { data: { session: authSession } } = await supabase.auth.getSession();
 
-        if (!tier || !userId) {
-            return NextResponse.json({ error: 'Missing tier or userId' }, { status: 400 });
+        if (!authSession) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const { tier } = await req.json();
+        const userId = authSession.user.id;
+        const email = authSession.user.email;
+
+        if (!tier || !userId || !email) {
+            return NextResponse.json({ error: 'Missing required checkout data' }, { status: 400 });
         }
 
         if (tier === 'starter') {

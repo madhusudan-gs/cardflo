@@ -2,10 +2,19 @@ import { NextResponse } from 'next/server';
 import { razorpay } from '@/lib/razorpay-server';
 import { PAYMENT_CONFIG } from '@/lib/payment-config';
 import { SubscriptionTier } from '@/lib/paywall-service';
+import { createClient } from '@/lib/supabase-server';
 
 export async function POST(req: Request) {
     try {
-        const { tier, userId, email } = await req.json();
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const { tier } = await req.json();
+        const userId = session.user.id;
 
         if (!tier || !userId) {
             return NextResponse.json({ error: 'Missing tier or userId' }, { status: 400 });
