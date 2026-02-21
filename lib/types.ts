@@ -27,6 +27,7 @@ export interface CardData {
     isDuplicate?: boolean; // New flag for UI warning
     isPartial?: boolean;   // New flag for obscured info detection
     logo_box?: [number, number, number, number]; // [ymin, xmin, ymax, xmax] normalized 0-1000
+    card_box?: [number, number, number, number]; // [ymin, xmin, ymax, xmax] normalized 0-1000
     logo_fallback_base64?: string; // Cropped image data string
 }
 

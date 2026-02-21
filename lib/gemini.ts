@@ -72,6 +72,7 @@ export async function extractCardData(
       - If invalid/ambiguous, return empty string. NO formatting chars allowed.
     - NOTES: Write a 1-sentence professional summary describing the person's role or company specialization.
     - LOGO BOX: Locate the most prominent company logo on the card. Return its bounding box coordinates as [ymin, xmin, ymax, xmax]. Values MUST be integers normalized to 1000 (e.g., [150, 200, 300, 450]). If NO logo is visible, do not return the logo_box property.
+    - CARD BOX: Locate the bounding box of the entire physical business card inside the image (ignoring any background/table/fingers). Return its bounding box coordinates as [ymin, xmin, ymax, xmax] normalized to 1000.
     - EMPTY FIELDS: If a piece of info is not on the card, return an empty string. DO NOT HALLUCINATE.`;
 
     try {
@@ -96,6 +97,11 @@ export async function extractCardData(
                             type: SchemaType.ARRAY,
                             items: { type: SchemaType.INTEGER },
                             description: "Bounding box [ymin, xmin, ymax, xmax] normalized to 1000"
+                        },
+                        card_box: {
+                            type: SchemaType.ARRAY,
+                            items: { type: SchemaType.INTEGER },
+                            description: "Bounding box [ymin, xmin, ymax, xmax] of the whole card normalized to 1000"
                         },
                     },
                     required: ["firstName", "lastName", "company", "email", "isPartial"],

@@ -22,6 +22,7 @@ export function LeadsScreen({ onBack }: { onBack: () => void }) {
     const [duplicatePairs, setDuplicatePairs] = useState<DuplicatePair[]>([]);
     const [scanningDuplicates, setScanningDuplicates] = useState(false);
     const [dismissedPairs, setDismissedPairs] = useState<Set<string>>(new Set());
+    const [expandedImage, setExpandedImage] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchLeads = async () => {
@@ -484,6 +485,22 @@ export function LeadsScreen({ onBack }: { onBack: () => void }) {
                                     </p>
                                 )}
                             </div>
+
+                            {/* Card Image Thumbnail */}
+                            {lead.image_url && (
+                                <div className="mt-4 border-t border-slate-800/50 pt-4">
+                                    <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-2">Captured Card</p>
+                                    <button
+                                        onClick={() => setExpandedImage(lead.image_url!)}
+                                        className="relative group/img overflow-hidden rounded-xl border border-slate-700/50 hover:border-emerald-500/50 transition-colors block w-32 h-20 bg-slate-900"
+                                    >
+                                        <img src={lead.image_url} alt="Business Card" className="w-full h-full object-cover opacity-80 group-hover/img:opacity-100 transition-opacity" />
+                                        <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                                            <ExternalLink className="w-4 h-4 text-white drop-shadow-md" />
+                                        </div>
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     ))
                 )}
@@ -602,6 +619,31 @@ export function LeadsScreen({ onBack }: { onBack: () => void }) {
                 <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg border border-slate-700 animate-in fade-in slide-in-from-bottom-2 duration-300 z-50 flex items-center gap-2">
                     <Check className="w-4 h-4 text-emerald-400" />
                     Copied to clipboard
+                </div>
+            )}
+
+            {/* ─── Image Expansion Modal ─────────────────────────── */}
+            {expandedImage && (
+                <div
+                    className="fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-[100] flex flex-col items-center justify-center p-4 animate-in fade-in duration-300"
+                    onClick={() => setExpandedImage(null)}
+                >
+                    <button
+                        onClick={() => setExpandedImage(null)}
+                        className="absolute top-6 right-6 p-2 bg-slate-900 border border-slate-800 rounded-full text-slate-400 hover:text-white transition-colors"
+                    >
+                        <X className="w-6 h-6" />
+                    </button>
+                    <div
+                        className="relative max-w-4xl w-full max-h-[80vh] aspect-[3/2] rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 flex items-center justify-center p-4"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <img
+                            src={expandedImage}
+                            alt="Expanded Card"
+                            className="w-full h-full object-contain rounded-xl drop-shadow-2xl"
+                        />
+                    </div>
                 </div>
             )}
         </div>

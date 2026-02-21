@@ -1,6 +1,7 @@
-export async function cropLogoFromImage(
+export async function cropImage(
     base64Image: string,
-    logoBox: [number, number, number, number] // [ymin, xmin, ymax, xmax] normalized to 1000
+    box: [number, number, number, number], // [ymin, xmin, ymax, xmax] normalized to 1000
+    paddingRatio: number = 0
 ): Promise<string | null> {
     return new Promise((resolve) => {
         try {
@@ -17,7 +18,7 @@ export async function cropLogoFromImage(
                 const width = img.width;
                 const height = img.height;
 
-                const [ymin, xmin, ymax, xmax] = logoBox;
+                const [ymin, xmin, ymax, xmax] = box;
 
                 const startY = (ymin / 1000) * height;
                 const startX = (xmin / 1000) * width;
@@ -33,9 +34,9 @@ export async function cropLogoFromImage(
                     return;
                 }
 
-                // Add a small 10% padding around the logo so it looks nice
-                const padX = cropWidth * 0.1;
-                const padY = cropHeight * 0.1;
+                // Add requested padding
+                const padX = cropWidth * paddingRatio;
+                const padY = cropHeight * paddingRatio;
 
                 const finalX = Math.max(0, startX - padX);
                 const finalY = Math.max(0, startY - padY);
@@ -68,4 +69,8 @@ export async function cropLogoFromImage(
             resolve(null);
         }
     });
+}
+
+export async function cropLogoFromImage(base64Image: string, logoBox: [number, number, number, number]): Promise<string | null> {
+    return cropImage(base64Image, logoBox, 0.1);
 }

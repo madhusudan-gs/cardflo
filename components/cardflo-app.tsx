@@ -18,7 +18,7 @@ import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
 import { SubscriptionTier, getUserUsage, getUserProfile } from "@/lib/paywall-service";
 import { Lead } from "@/lib/types";
-import { cropLogoFromImage } from "@/lib/image-utils";
+import { cropLogoFromImage, cropImage } from "@/lib/image-utils";
 
 export default function CardfloApp() {
     const [status, setStatus] = useState<AppStatus>("AUTHENTICATING");
@@ -194,6 +194,15 @@ export default function CardfloApp() {
                         ...finalCardData,
                         logo_fallback_base64: croppedLogoBase64
                     };
+                }
+            }
+
+            // Attempt to crop the entire card perfectly to its edges
+            if (data.card_box && data.card_box.length === 4) {
+                console.log("CardfloApp: Cropping edge-to-edge card...");
+                const croppedCardBase64 = await cropImage(imageBase64, data.card_box);
+                if (croppedCardBase64) {
+                    setFrontImage(croppedCardBase64);
                 }
             }
 
