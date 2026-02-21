@@ -92,7 +92,7 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
     return (
         <div className="flex flex-col gap-6 p-6 glass-panel rounded-2xl max-w-md w-full mx-auto mt-10">
             <div className="space-y-4 text-center flex flex-col items-center">
-                <img src="/logo.png" alt="Cardflo" className="h-12 w-auto object-contain" />
+                <img src="/logo.png" alt="Cardflo" className="h-20 w-auto object-contain" />
                 <p className="text-slate-400 text-sm">
                     {isSignUp ? 'Create your account' : 'Welcome back'}
                 </p>
