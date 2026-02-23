@@ -175,7 +175,8 @@ export default function CardfloApp() {
         // If we are already reviewing a card, this must be the back side
         if (currentCard) {
             try {
-                const res = await fetch('/api/extract/enrich', {
+                const apiUrl = typeof window !== 'undefined' ? '/api/extract/enrich' : `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/extract/enrich`;
+                const res = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ existingData: currentCard, backImageBase64: imageBase64 })
@@ -202,7 +203,8 @@ export default function CardfloApp() {
 
         try {
             console.log("CardfloApp: Sending to Gemini API...");
-            const res = await fetch('/api/extract/process', {
+            const apiUrl = typeof window !== 'undefined' ? '/api/extract/process' : `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/extract/process`;
+            const res = await fetch(apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ imageBase64 })

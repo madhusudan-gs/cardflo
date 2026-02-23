@@ -218,9 +218,9 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
                     onCaptureRef.current(bestFrameBase64);
                 }
             } catch (err) {
-                console.error("Scanner: Cropping failed, falling back to full resolution", err);
+                console.error("Scanner: Burst capture failed, falling back to instant capture", err);
 
-                // Fallback to full resolution without crop
+                // Fallback to instant capture
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 const context = canvas.getContext("2d");
@@ -231,7 +231,7 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
                 }
             }
         }
-    }, []);
+    }, [calculateSharpness]);
 
     // AI-Based Card Detection Loop (2000ms) - Only fires if an actual card is visible
     useEffect(() => {
@@ -267,7 +267,10 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
                 // Switch to detecting while we await network so we don't spam multiple calls
                 setStatus("DETECTING");
 
-                const response = await fetch('/api/extract/detect', {
+                // Try to reliably fetch the API route whether we're on localhost or Vercel
+                const apiUrl = typeof window !== 'undefined' ? '/api/extract/detect' : `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/extract/detect`;
+
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ imageBase64: base64Image })
