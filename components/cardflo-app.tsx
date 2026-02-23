@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { AppStatus, CardData } from "@/lib/types";
 import { ReferralUI } from "@/components/referral-ui";
-import { extractCardData, enrichWithBackImage } from "@/lib/gemini";
+
 import { AdminDashboard } from "@/components/admin-dashboard";
 import { saveCard, getStats, saveDraft, deleteDraft, getDuplicateMatch } from "@/lib/supabase-service";
 import { canScan, incrementUsage } from "@/lib/paywall-service";
@@ -176,7 +176,15 @@ export default function CardfloApp() {
         if (currentCard) {
             try {
                 console.log("CardfloApp: Sending back side to Gemini for enrichment...");
-                const enrichedData = await enrichWithBackImage(currentCard, imageBase64, apiKey);
+                const res = await fetch('/api/extract/enrich', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ existingData: currentCard, backImageBase64: imageBase64 })
+                });
+
+                if (!res.ok) throw new Error("Failed to process back of card");
+                const enrichedData = await res.json();
+
                 console.log("CardfloApp: Enrichment successful", enrichedData);
                 setCurrentCard(enrichedData);
                 setBackImage(imageBase64);
@@ -194,8 +202,18 @@ export default function CardfloApp() {
         setFrontImage(imageBase64);
 
         try {
-            console.log("CardfloApp: Sending to Gemini...");
-            const data = await extractCardData(imageBase64, apiKey);
+            console.log("CardfloApp: Sending to Gemini API...");
+            const res = await fetch('/api/extract/process', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imageBase64 })
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || "Failed to process card");
+            }
+            const data = await res.json();
             console.log("CardfloApp: Extraction successful", data);
 
             // Per User Requirement: Get matched lead for display in ReviewScreen

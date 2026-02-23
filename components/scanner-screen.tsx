@@ -1,7 +1,7 @@
 import { useRef, useCallback, useState, useEffect } from "react";
 import { Button } from "@/components/ui/shared";
 import { Camera, RefreshCw, Loader2, Sparkles } from "lucide-react";
-import { detectSteadyCard } from "@/lib/gemini"; // Restored AI Detection!
+
 
 // Helper function to quickly score the sharpness/focus of a video frame 
 // by analyzing pixel intensity differences (basic edge detection).
@@ -267,7 +267,14 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
                 // Switch to detecting while we await network so we don't spam multiple calls
                 setStatus("DETECTING");
 
-                const result = await detectSteadyCard(base64Image);
+                const response = await fetch('/api/extract/detect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ imageBase64: base64Image })
+                });
+
+                if (!response.ok) throw new Error('Failed to detect card');
+                const result = await response.json();
 
                 if (result && result.card_present) {
                     console.log("Scanner: AI verified card presence! Capturing HD...");

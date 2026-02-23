@@ -14,21 +14,21 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Image data missing' }, { status: 400 });
         }
 
-        const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+        const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
             return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 });
         }
 
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash",
+            model: "gemini-3-flash-preview",
             systemInstruction: SYSTEM_INSTRUCTION
         });
 
         const prompt = `Extract standard contact fields from this business card. Include coordinates for the Logo bounding box [ymin, xmin, ymax, xmax] normalized to 1000 so the frontend can crop the image.`;
 
         const result = await model.generateContent({
-            contents: [{ role: "user", parts: [{ text: prompt }, { inlineData: { data: imageBase64.split(",")[1], mimeType: "image/jpeg" } }] }],
+            contents: [{ role: "user", parts: [{ text: prompt }, { inlineData: { data: imageBase64.split(",")[1] || imageBase64, mimeType: "image/jpeg" } }] }],
             generationConfig: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -60,9 +60,7 @@ export async function POST(req: Request) {
             },
         });
 
-        const response = await result.response;
-        const text = response.text().replace(/```json/g, "").replace(/```/g, "").trim();
-
+        const text = result.response.text().replace(/```json/g, "").replace(/```/g, "").trim();
         return NextResponse.json(JSON.parse(text));
 
     } catch (error: any) {
