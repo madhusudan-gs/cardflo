@@ -23,7 +23,7 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: `${window.location.origin}/auth/callback`,
+                    redirectTo: window.location.origin,
                     queryParams: {
                         access_type: 'offline',
                         prompt: 'select_account'
@@ -47,7 +47,7 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
         setMessage(null)
         try {
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${window.location.origin}/reset-password`,
+                redirectTo: window.location.origin,
             })
             if (error) throw error
             setMessage("Password reset link sent! Check your inbox.")
