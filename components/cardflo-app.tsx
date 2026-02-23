@@ -175,21 +175,10 @@ export default function CardfloApp() {
         // If we are already reviewing a card, this must be the back side
         if (currentCard) {
             try {
-                // Route enrichment payload through the secure Supabase Edge Function
-                const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-                const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-                const res = await fetch(`${supabaseUrl}/functions/v1/extract-card-data`, {
+                const res = await fetch('/api/extract/enrich', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${supabaseAnonKey}`
-                    },
-                    body: JSON.stringify({
-                        action: 'enrich',
-                        existingData: currentCard,
-                        backImageBase64: imageBase64
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ existingData: currentCard, backImageBase64: imageBase64 })
                 });
 
                 if (!res.ok) throw new Error("Failed to process back of card");
@@ -212,17 +201,11 @@ export default function CardfloApp() {
         setFrontImage(imageBase64);
 
         try {
-            console.log("CardfloApp: Sending to Supabase Edge AI for extraction...");
-            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-            const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-            const res = await fetch(`${supabaseUrl}/functions/v1/extract-card-data`, {
+            console.log("CardfloApp: Sending to Gemini API...");
+            const res = await fetch('/api/extract/process', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${supabaseAnonKey}`
-                },
-                body: JSON.stringify({ action: 'extract', imageBase64 })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imageBase64 })
             });
 
             if (!res.ok) {

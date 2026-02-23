@@ -267,17 +267,10 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
                 // Switch to detecting while we await network so we don't spam multiple calls
                 setStatus("DETECTING");
 
-                // Route detection payload through the secure Supabase Edge Function
-                const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-                const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-                const response = await fetch(`${supabaseUrl}/functions/v1/extract-card-data`, {
+                const response = await fetch('/api/extract/detect', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${supabaseAnonKey}`
-                    },
-                    body: JSON.stringify({ action: 'detect', imageBase64: base64Image })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ imageBase64: base64Image })
                 });
 
                 if (!response.ok) throw new Error('Failed to detect card');
