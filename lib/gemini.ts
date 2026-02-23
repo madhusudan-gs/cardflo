@@ -15,7 +15,7 @@ export async function detectSteadyCard(
 ): Promise<{ is_steady: boolean; card_present: boolean }> {
     try {
         const genAI = getGenAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
         const prompt = `Can you see a business card in this image? It might be held in a hand or slightly angled. If the core details (name, email, phone) appear reasonably legible, return true. 
         It does not need to be perfectly still or perfectly flat.
@@ -58,7 +58,7 @@ export async function extractCardData(
     try {
         const genAI = getGenAI(apiKey);
         const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash",
+            model: "gemini-1.5-flash-latest",
             systemInstruction: `You are a professional business card scanner. 
 Your goal is to extract contact information with 100% accuracy.
 If a field is not present, return an empty string.
@@ -122,7 +122,7 @@ export async function enrichWithBackImage(
     try {
         const genAI = getGenAI(apiKey);
         const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash",
+            model: "gemini-1.5-flash-latest",
             systemInstruction: `You are enriching an existing business card profile with details from the back of the card.
 DO NOT overwrite the front notes, combine them.`
         });
