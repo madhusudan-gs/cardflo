@@ -143,12 +143,6 @@ export default function CardfloApp() {
     }, [status, session]);
 
     const handleCapture = async (imageBase64: string) => {
-        const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-        if (!apiKey) {
-            console.error("CardfloApp: Missing NEXT_PUBLIC_GEMINI_API_KEY");
-            alert("Missing Gemini API Key in Environment");
-            return;
-        }
 
         if (session?.user.id) {
             const { allowed, reason, warning } = await canScan(session.user.id);
