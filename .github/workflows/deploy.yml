@@ -34,15 +34,8 @@ jobs:
       - name: Prepare Deploy Directory
         run: |
           mkdir -p deploy
-          # Copy standalone output
-          cp -r .next/standalone/* deploy/
-          # Copy static files to standalone
-          cp -r public deploy/public
-          cp -r .next/static deploy/.next/static
-          
-          # Optional: preserve htaccess for apache
+          cp -r out/* deploy/
           cp public/.htaccess deploy/ || true
-          
           echo "Build Success: $(date)" > deploy/deploy-check.txt
           echo "COMMIT: ${{ github.sha }}" >> deploy/deploy-check.txt
           echo "=== Deploy directory contents ==="
