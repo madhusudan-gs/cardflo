@@ -143,47 +143,14 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
             const canvas = canvasRef.current;
 
             try {
-                const videoRect = video.getBoundingClientRect();
-                const guideRect = guideRef.current.getBoundingClientRect();
-
-                // Calculate scale and crop (object-cover centers the video)
-                const scale = Math.max(videoRect.width / video.videoWidth, videoRect.height / video.videoHeight);
-
-                const renderedWidth = video.videoWidth * scale;
-                const renderedHeight = video.videoHeight * scale;
-
-                // Offset of the rendered video within its container
-                const videoOffsetX = (videoRect.width - renderedWidth) / 2;
-                const videoOffsetY = (videoRect.height - renderedHeight) / 2;
-
-                // Guide position relative to the rendered video
-                const guideXRelativeToVideo = (guideRect.left - videoRect.left) - videoOffsetX;
-                const guideYRelativeToVideo = (guideRect.top - videoRect.top) - videoOffsetY;
-
-                // Source coordinates on the actual video frame
-                const sourceX = Math.max(0, guideXRelativeToVideo / scale);
-                const sourceY = Math.max(0, guideYRelativeToVideo / scale);
-
-                // Ensure width/height are positive real numbers before drawing
-                const sourceWidth = Math.max(1, Math.min(video.videoWidth - sourceX, guideRect.width / scale));
-                const sourceHeight = Math.max(1, Math.min(video.videoHeight - sourceY, guideRect.height / scale));
-
-                // Set canvas size to crop size
-                canvas.width = sourceWidth;
-                canvas.height = sourceHeight;
+                // Ensure canvas size matches the full video resolution
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
 
                 const context = canvas.getContext("2d");
                 if (context) {
-                    // Apply "scan" filter to clean up the image (B&W, High Contrast)
-                    context.filter = 'grayscale(100%) contrast(140%) brightness(120%)';
-
-                    context.drawImage(
-                        video,
-                        sourceX, sourceY, sourceWidth, sourceHeight,
-                        0, 0, sourceWidth, sourceHeight
-                    );
-
-                    context.filter = 'none'; // Reset filter
+                    // Draw the entire full-resolution video frame
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
                     // EXTRACTION_QUALITY: 0.95
                     const imageBase64 = canvas.toDataURL("image/jpeg", 0.95);
