@@ -3,6 +3,45 @@ import { Button } from "@/components/ui/shared";
 import { Camera, RefreshCw, Loader2, Sparkles } from "lucide-react";
 import { detectSteadyCard } from "@/lib/gemini"; // Restored AI Detection!
 
+// Helper function to quickly score the sharpness/focus of a video frame 
+// by analyzing pixel intensity differences (basic edge detection).
+const calculateSharpness = (video: HTMLVideoElement): number => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return 0;
+
+    // Scale down to 200px width for fast processing without blocking the UI thread
+    canvas.width = 200;
+    canvas.height = Math.floor(200 * (video.videoHeight / video.videoWidth)) || 200;
+
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+
+    let totalScore = 0;
+    let count = 0;
+    const width = canvas.width;
+
+    for (let y = 0; y < canvas.height - 1; y++) {
+        for (let x = 0; x < canvas.width - 1; x++) {
+            const i = (y * width + x) * 4;
+            const rightI = (y * width + (x + 1)) * 4;
+            const bottomI = ((y + 1) * width + x) * 4;
+
+            // Grayscale approx
+            const p = (data[i] + data[i + 1] + data[i + 2]) / 3;
+            const rightP = (data[rightI] + data[rightI + 1] + data[rightI + 2]) / 3;
+            const bottomP = (data[bottomI] + data[bottomI + 1] + data[bottomI + 2]) / 3;
+
+            // Sum of absolute differences between adjacent pixels
+            totalScore += Math.abs(p - rightP) + Math.abs(p - bottomP);
+            count++;
+        }
+    }
+
+    return count > 0 ? totalScore / count : 0;
+};
+
 interface ScannerScreenProps {
     onCapture: (imageBase64: string) => void;
     onCancel: () => void;
@@ -115,9 +154,10 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
             const video = videoRef.current;
             if (video.videoWidth === 0 || video.videoHeight === 0) return;
 
+            setStatus("CAPTURING");
+
             // If manual capture, attempt to apply hardware zoom first
             if (isManual && streamRef.current) {
-                setStatus("CAPTURING");
                 try {
                     const track = streamRef.current.getVideoTracks()[0];
                     if (track) {
@@ -143,18 +183,39 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
             const canvas = canvasRef.current;
 
             try {
-                // Ensure canvas size matches the full video resolution
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
+                // Burst Capture: Take 5 frames over ~750ms and pick the sharpest one!
+                let bestFrameBase64 = "";
+                let bestScore = -1;
+                const burstCount = 5;
+                const delayBetweenFramesMs = 150;
 
-                const context = canvas.getContext("2d");
-                if (context) {
-                    // Draw the entire full-resolution video frame
-                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                console.log(`Scanner: Starting burst capture of ${burstCount} frames...`);
 
-                    // EXTRACTION_QUALITY: 0.95
-                    const imageBase64 = canvas.toDataURL("image/jpeg", 0.95);
-                    onCaptureRef.current(imageBase64);
+                for (let i = 0; i < burstCount; i++) {
+                    if (i > 0) {
+                        await new Promise(resolve => setTimeout(resolve, delayBetweenFramesMs));
+                    }
+
+                    const score = calculateSharpness(video);
+
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    const context = canvas.getContext("2d");
+                    if (context) {
+                        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                        const frameBase64 = canvas.toDataURL("image/jpeg", 0.95);
+
+                        console.log(`Scanner: Burst frame ${i + 1}/${burstCount}, sharpness score: ${score.toFixed(2)}`);
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestFrameBase64 = frameBase64;
+                        }
+                    }
+                }
+
+                console.log(`Scanner: Burst complete. Selected clearest frame with score: ${bestScore.toFixed(2)}`);
+                if (bestFrameBase64) {
+                    onCaptureRef.current(bestFrameBase64);
                 }
             } catch (err) {
                 console.error("Scanner: Cropping failed, falling back to full resolution", err);
