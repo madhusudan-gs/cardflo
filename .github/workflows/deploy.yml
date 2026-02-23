@@ -34,12 +34,19 @@ jobs:
       - name: Prepare Deploy Directory
         run: |
           mkdir -p deploy
-          cp -r out/* deploy/
+          # Copy standalone output
+          cp -r .next/standalone/* deploy/
+          # Copy static files to standalone
+          cp -r public deploy/public
+          cp -r .next/static deploy/.next/static
+          
+          # Optional: preserve htaccess for apache
           cp public/.htaccess deploy/ || true
+          
           echo "Build Success: $(date)" > deploy/deploy-check.txt
           echo "COMMIT: ${{ github.sha }}" >> deploy/deploy-check.txt
           echo "=== Deploy directory contents ==="
-          find deploy -maxdepth 2 -type f | head -30
+          ls -la deploy/
 
       - name: Discover FTP Directory Structure
         env:
