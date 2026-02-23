@@ -28,7 +28,7 @@ export function ReviewScreen({ data: initialData, frontImage, backImage, onSave,
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 flex flex-col">
+        <div className="min-h-[100dvh] bg-slate-950 flex flex-col">
             {/* Header */}
             <div className="sticky top-0 z-10 glass-panel border-b border-slate-800 rounded-none px-4 py-4 flex items-center justify-between backdrop-blur-xl">
                 <Button variant="ghost" size="sm" onClick={onCancel} className="-ml-2 text-slate-400 hover:text-white transition-colors">

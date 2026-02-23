@@ -16,10 +16,11 @@ export async function POST(req: Request) {
         }
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        const prompt = `Business card in frame?
-        Return JSON: { "is_steady": boolean (legible), "card_present": boolean }`;
+        const prompt = `Can you see a business card in this image? It might be held in a hand or slightly angled. If the core details (name, email, phone) appear reasonably legible, return true. 
+        It does not need to be perfectly still or perfectly flat.
+        Return JSON: { "is_steady": boolean (true if legible), "card_present": boolean (true if card is in frame) }`;
 
         const result = await model.generateContent({
             contents: [{ role: "user", parts: [{ text: prompt }, { inlineData: { data: imageBase64.split(",")[1], mimeType: "image/jpeg" } }] }],
@@ -39,6 +40,8 @@ export async function POST(req: Request) {
 
         const response = await result.response;
         const text = response.text().replace(/```json/g, "").replace(/```/g, "").trim();
+
+        console.log("Detection API Raw Response:", text); // <-- Debugging log added here
 
         return NextResponse.json(JSON.parse(text));
 

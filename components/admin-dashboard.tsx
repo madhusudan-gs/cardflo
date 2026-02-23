@@ -148,7 +148,7 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center">
+            <div className="min-h-[100dvh] bg-slate-950 flex flex-col items-center justify-center">
                 <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mb-4" />
                 <p className="text-slate-400 text-sm font-bold uppercase tracking-widest text-[10px]">
                     {userRole === 'super_admin' ? 'Super Admin Pulse...' : 'Team Sync...'}
@@ -158,7 +158,7 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
     }
 
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col p-6 max-w-lg mx-auto pb-24">
+        <div className="min-h-[100dvh] bg-slate-950 text-slate-200 flex flex-col p-6 max-w-lg mx-auto pb-24">
             <header className="flex items-center justify-between mb-8">
                 <div className="flex items-center">
                     <Button variant="ghost" size="icon" onClick={onBack} className="text-slate-400 mr-2 h-8 w-8">

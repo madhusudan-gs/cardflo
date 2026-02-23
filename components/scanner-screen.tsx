@@ -1,7 +1,7 @@
 import { useRef, useCallback, useState, useEffect } from "react";
 import { Button } from "@/components/ui/shared";
 import { Camera, RefreshCw, Loader2, Sparkles } from "lucide-react";
-import { detectSteadyCard } from "@/lib/gemini";
+import { detectSteadyCard } from "@/lib/gemini"; // Restored AI Detection!
 
 interface ScannerScreenProps {
     onCapture: (imageBase64: string) => void;
@@ -12,8 +12,11 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const detectionCanvasRef = useRef<HTMLCanvasElement | null>(null);
+    const guideRef = useRef<HTMLDivElement>(null);
 
     const streamRef = useRef<MediaStream | null>(null);
+    const isStartingRef = useRef<boolean>(false);
+
     const [isProcessing, setIsProcessing] = useState(false);
     const [status, setStatus] = useState<"IDLE" | "DETECTING" | "STEADY" | "CAPTURING">("IDLE");
 
@@ -21,14 +24,26 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
     const statusRef = useRef(status);
     const isProcessingRef = useRef(isProcessing);
 
+    // Crucial fix: store onCapture and onCancel in refs so their identity changing
+    // doesn't cause the AI polling or camera `useEffect` to tear down and restart endlessly.
+    const onCaptureRef = useRef(onCapture);
+    const onCancelRef = useRef(onCancel);
+    useEffect(() => {
+        onCaptureRef.current = onCapture;
+        onCancelRef.current = onCancel;
+    }, [onCapture, onCancel]);
+
     useEffect(() => { statusRef.current = status; }, [status]);
     useEffect(() => { isProcessingRef.current = isProcessing; }, [isProcessing]);
 
     const stopCamera = useCallback(() => {
+        console.log("Scanner: Stopping camera tracks");
         if (streamRef.current) {
-            console.log("Scanner: Stopping camera tracks");
             streamRef.current.getTracks().forEach((track) => track.stop());
             streamRef.current = null;
+        }
+        if (videoRef.current) {
+            videoRef.current.srcObject = null;
         }
     }, []);
 
@@ -40,128 +55,217 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
     }, []);
 
     const startCamera = useCallback(async () => {
-        if (streamRef.current) return;
+        if (streamRef.current || isStartingRef.current) return;
+
+        isStartingRef.current = true;
         try {
             console.log("Scanner: Requesting camera access");
             const mediaStream = await navigator.mediaDevices.getUserMedia({
                 video: {
-                    facingMode: "environment",
+                    facingMode: { ideal: "environment" },
                     width: { ideal: 1920 },
                     height: { ideal: 1080 }
                 },
             });
+
+            // If the camera was stopped while we were waiting for permissions
+            if (!isStartingRef.current) {
+                console.log("Scanner: Camera access granted but component unmounted, stopping tracks.");
+                mediaStream.getTracks().forEach(track => track.stop());
+                return;
+            }
+
             streamRef.current = mediaStream;
             if (videoRef.current) {
                 videoRef.current.srcObject = mediaStream;
+                try {
+                    await videoRef.current.play();
+                } catch (e) {
+                    console.warn("Scanner: Auto-play prevented or failed", e);
+                }
             }
-        } catch (err) {
-            console.error("Error accessing camera:", err);
-            alert("Could not access camera. Please allow permissions.");
+        } catch (err: any) {
+            console.error("Scanner Error accessing camera:", err);
+            // Handle iOS specific NotAllowedError or other errors gracefully
+            if (err.name === "NotAllowedError") {
+                alert("Camera permission denied. Please enable camera access in your browser settings and try again.");
+            } else if (err.name === "NotFoundError") {
+                alert("No camera device found on this system.");
+            } else {
+                alert("Could not access camera. Please allow permissions and try again.");
+            }
+            onCancelRef.current(); // Automatically exit scanner if broken
+        } finally {
+            isStartingRef.current = false;
         }
     }, []);
 
     useEffect(() => {
         startCamera();
 
-        const handleVisibilityChange = () => {
-            if (document.hidden) {
-                console.log("Scanner: Tab hidden, pausing camera");
-                stopCamera();
-            } else {
-                console.log("Scanner: Tab visible, restarting camera");
-                startCamera();
-            }
-        };
-
-        document.addEventListener("visibilitychange", handleVisibilityChange);
-        window.addEventListener("pagehide", stopCamera);
-
         return () => {
             console.log("Scanner: Unmounting, cleaning up camera");
+            isStartingRef.current = false; // Signal any pending getUserMedia to abort
             stopCamera();
-            document.removeEventListener("visibilitychange", handleVisibilityChange);
-            window.removeEventListener("pagehide", stopCamera);
         };
     }, [startCamera, stopCamera]);
 
-    const captureFullRes = useCallback(() => {
-        if (videoRef.current && canvasRef.current) {
+    const captureFullRes = useCallback(async (isManual: boolean = false) => {
+        if (videoRef.current && canvasRef.current && guideRef.current) {
             const video = videoRef.current;
+            if (video.videoWidth === 0 || video.videoHeight === 0) return;
+
+            // If manual capture, attempt to apply hardware zoom first
+            if (isManual && streamRef.current) {
+                setStatus("CAPTURING");
+                try {
+                    const track = streamRef.current.getVideoTracks()[0];
+                    if (track) {
+                        const capabilities: any = track.getCapabilities ? track.getCapabilities() : {};
+                        if (capabilities && capabilities.zoom) {
+                            // Apply a 2x zoom (or max if less than 2x)
+                            const targetZoom = Math.min(2, capabilities.zoom.max || 2);
+                            console.log(`Scanner: Applying manual hardware zoom: ${targetZoom}x`);
+                            await track.applyConstraints({
+                                advanced: [{ zoom: targetZoom }] as any
+                            });
+                            // Wait for optics to adjust and auto-focus
+                            await new Promise(resolve => setTimeout(resolve, 600));
+                        } else {
+                            console.log("Scanner: Hardware zoom not supported by this lens.");
+                        }
+                    }
+                } catch (e) {
+                    console.error("Scanner: Could not apply hardware zoom", e);
+                }
+            }
+
             const canvas = canvasRef.current;
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const context = canvas.getContext("2d");
-            if (context) {
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                // Prototype Logic: EXTRACTION_QUALITY: 0.95
-                const imageBase64 = canvas.toDataURL("image/jpeg", 0.95);
-                onCapture(imageBase64);
+
+            try {
+                const videoRect = video.getBoundingClientRect();
+                const guideRect = guideRef.current.getBoundingClientRect();
+
+                // Calculate scale and crop (object-cover centers the video)
+                const scale = Math.max(videoRect.width / video.videoWidth, videoRect.height / video.videoHeight);
+
+                const renderedWidth = video.videoWidth * scale;
+                const renderedHeight = video.videoHeight * scale;
+
+                // Offset of the rendered video within its container
+                const videoOffsetX = (videoRect.width - renderedWidth) / 2;
+                const videoOffsetY = (videoRect.height - renderedHeight) / 2;
+
+                // Guide position relative to the rendered video
+                const guideXRelativeToVideo = (guideRect.left - videoRect.left) - videoOffsetX;
+                const guideYRelativeToVideo = (guideRect.top - videoRect.top) - videoOffsetY;
+
+                // Source coordinates on the actual video frame
+                const sourceX = Math.max(0, guideXRelativeToVideo / scale);
+                const sourceY = Math.max(0, guideYRelativeToVideo / scale);
+
+                // Ensure width/height are positive real numbers before drawing
+                const sourceWidth = Math.max(1, Math.min(video.videoWidth - sourceX, guideRect.width / scale));
+                const sourceHeight = Math.max(1, Math.min(video.videoHeight - sourceY, guideRect.height / scale));
+
+                // Set canvas size to crop size
+                canvas.width = sourceWidth;
+                canvas.height = sourceHeight;
+
+                const context = canvas.getContext("2d");
+                if (context) {
+                    // Apply "scan" filter to clean up the image (B&W, High Contrast)
+                    context.filter = 'grayscale(100%) contrast(140%) brightness(120%)';
+
+                    context.drawImage(
+                        video,
+                        sourceX, sourceY, sourceWidth, sourceHeight,
+                        0, 0, sourceWidth, sourceHeight
+                    );
+
+                    context.filter = 'none'; // Reset filter
+
+                    // EXTRACTION_QUALITY: 0.95
+                    const imageBase64 = canvas.toDataURL("image/jpeg", 0.95);
+                    onCaptureRef.current(imageBase64);
+                }
+            } catch (err) {
+                console.error("Scanner: Cropping failed, falling back to full resolution", err);
+
+                // Fallback to full resolution without crop
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const context = canvas.getContext("2d");
+                if (context) {
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const imageBase64 = canvas.toDataURL("image/jpeg", 0.95);
+                    onCaptureRef.current(imageBase64);
+                }
             }
         }
-    }, [onCapture]);
+    }, []);
 
-    // AI Search Loop (1500ms) - Increased frequency for "smoothness"
+    // AI-Based Card Detection Loop (2000ms) - Only fires if an actual card is visible
     useEffect(() => {
-        const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-        if (!apiKey) {
-            console.error("Scanner: Missing NEXT_PUBLIC_GEMINI_API_KEY");
-            return;
-        }
-
-        console.log("Scanner: Starting AI Search Loop");
+        console.log("Scanner: Starting AI Detection Loop");
 
         const interval = setInterval(async () => {
-            // Check refs and isProcessing status
             if (!videoRef.current || !detectionCanvasRef.current) return;
-            if (statusRef.current === "CAPTURING" || statusRef.current === "STEADY") return;
-            if (isProcessingRef.current) return;
+
+            // Only process frames when we are actively idling/waiting for a card.
+            // If we are already detecting or capturing, ignore.
+            if (statusRef.current !== "IDLE") return;
 
             const video = videoRef.current;
-            // Robust Capture: Check readyState === 4 (HAVE_ENOUGH_DATA)
             if (video.readyState !== 4) return;
 
-            const ctx = detectionCanvasRef.current.getContext('2d', { willReadFrequently: true });
+            const ctx = detectionCanvasRef.current.getContext('2d');
             if (!ctx) return;
-
-            // Detection Stage: Prototype uses 0.5x scale
-            setIsProcessing(true);
 
             try {
                 const vW = video.videoWidth;
                 const vH = video.videoHeight;
                 if (vW === 0 || vH === 0) return;
 
-                // Prototype Logic: PREVIEW_SCALE: 0.5
-                detectionCanvasRef.current.width = vW * 0.5;
-                detectionCanvasRef.current.height = vH * 0.5;
+                // Downsample slightly for network upload, but keep resolution high enough to read handheld cards
+                const sampleScale = 0.75;
+                detectionCanvasRef.current.width = vW * sampleScale;
+                detectionCanvasRef.current.height = vH * sampleScale;
 
-                ctx.drawImage(video, 0, 0, detectionCanvasRef.current.width, detectionCanvasRef.current.height);
-                // Lower quality to 0.3 for faster transit
-                const detectionImage = detectionCanvasRef.current.toDataURL("image/jpeg", 0.3);
+                ctx.drawImage(video, 0, 0, vW * sampleScale, vH * sampleScale);
+                const base64Image = detectionCanvasRef.current.toDataURL("image/jpeg", 0.7);
 
-                console.log("Scanner: AI checking frame...");
-                const { is_steady, card_present } = await detectSteadyCard(detectionImage, apiKey);
+                setIsProcessing(true);
+                // Switch to detecting while we await network so we don't spam multiple calls
+                setStatus("DETECTING");
 
-                if (card_present && is_steady) {
-                    console.log("Scanner: Steady state reached! Capturing HD...");
+                const result = await detectSteadyCard(base64Image);
+
+                if (result && result.card_present) {
+                    console.log("Scanner: AI verified card presence! Capturing HD...");
                     setStatus("STEADY");
-                    clearInterval(interval);
-                    setStatus("CAPTURING");
-                    captureFullRes();
-                } else if (!card_present) {
-                    setStatus("IDLE");
+
+                    clearInterval(interval); // Disable further searching
+
+                    // Small delay so UI displays "Steady!" feedback
+                    setTimeout(() => {
+                        setStatus("CAPTURING");
+                        captureFullRes(false);
+                    }, 500);
                 } else {
-                    setStatus("DETECTING");
+                    // No card found, reset to IDLE so the next loop can fire
+                    setStatus("IDLE");
                 }
             } catch (err) {
-                console.error("Scanner: Detection loop error:", err);
+                console.error("Scanner: AI Detection loop error:", err);
+                setStatus("IDLE"); // Reset on error to prevent locking
             } finally {
                 setIsProcessing(false);
             }
-        }, 1500); // Increased to 1500ms for stability against 429 errors
+        }, 2000); // 2 Second interval completely stabilizes the UI
 
         return () => {
-            console.log("Scanner: Clearing AI Search Loop");
+            console.log("Scanner: Clearing AI Detection Loop");
             clearInterval(interval);
         };
     }, [captureFullRes]);
@@ -173,13 +277,14 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
                     ref={videoRef}
                     autoPlay
                     playsInline
+                    muted
                     className="absolute inset-0 w-full h-full object-cover"
                 />
                 <canvas ref={canvasRef} className="hidden" />
 
                 {/* Overlay Guide */}
                 <div className="absolute inset-0 border-[40px] border-black/50 pointer-events-none flex items-center justify-center">
-                    <div className={`w-full h-64 border-2 rounded-lg relative transition-colors duration-500 ${status === "STEADY" || status === "CAPTURING" ? "border-emerald-400" :
+                    <div ref={guideRef} className={`w-full h-64 border-2 rounded-lg relative transition-colors duration-500 ${status === "STEADY" || status === "CAPTURING" ? "border-emerald-400" :
                         status === "DETECTING" ? "border-cyan-400" : "border-white/20"
                         }`}>
                         <div className={`absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 transition-colors ${status === "STEADY" || status === "CAPTURING" ? "border-emerald-400" : "border-cyan-400"
@@ -192,11 +297,18 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
                             }`}></div>
 
                         <div className="absolute inset-0 flex flex-col items-center justify-center space-y-3">
-                            {isProcessing && (
+                            {status === "IDLE" && !isProcessing && (
                                 <div className="absolute top-8 left-8 right-8 flex items-center justify-center animate-in fade-in duration-300">
-                                    <div className="flex items-center gap-2 bg-emerald-500/20 px-6 py-2 rounded-full border border-emerald-500/30 backdrop-blur-md">
-                                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                                        <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Sensing card... hold steady</span>
+                                    <div className="flex items-center gap-2 bg-black/40 px-6 py-2 rounded-full border border-white/10 backdrop-blur-md">
+                                        <span className="text-[10px] font-black text-white/70 uppercase tracking-widest">Align card in frame</span>
+                                    </div>
+                                </div>
+                            )}
+                            {status === "DETECTING" && (
+                                <div className="absolute top-8 left-8 right-8 flex items-center justify-center animate-in fade-in duration-300">
+                                    <div className="flex items-center gap-2 bg-cyan-500/20 px-6 py-2 rounded-full border border-cyan-500/30 backdrop-blur-md">
+                                        <div className="w-2 h-2 bg-cyan-500 rounded-full animate-pulse"></div>
+                                        <span className="text-[10px] font-black text-cyan-500 uppercase tracking-widest">Sensing card...</span>
                                     </div>
                                 </div>
                             )}
@@ -209,7 +321,7 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
                         </div>
 
                         {/* Scanning Laser Line */}
-                        <div className={`absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent transition-opacity duration-300 ${isProcessing ? "opacity-100 scan-laser" : "opacity-0"}`} />
+                        <div className={`absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent transition-opacity duration-300 ${isProcessing && status === "DETECTING" ? "opacity-100 scan-laser" : "opacity-0"}`} />
                     </div>
                 </div>
             </div>
@@ -221,7 +333,7 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
 
                 <div className="relative flex items-center justify-center">
                     <button
-                        onClick={captureFullRes}
+                        onClick={() => captureFullRes(true)}
                         disabled={status === "CAPTURING"}
                         className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center relative group z-10"
                     >

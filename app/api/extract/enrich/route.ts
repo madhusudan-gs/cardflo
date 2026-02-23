@@ -12,7 +12,7 @@ export async function POST(req: Request) {
 
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
-            model: "gemini-3-pro-preview",
+            model: "gemini-1.5-flash",
             systemInstruction: `You are a professional business card AI assistant.
 Your goal is to extract ALL relevant keywords, services, and extra context from the BACK side of a business card.
 You will be given the data already extracted from the front side.

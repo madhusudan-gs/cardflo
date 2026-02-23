@@ -30,7 +30,7 @@ export function ReferralUI({ referralCode, bonusScans, onBack }: ReferralUIProps
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col p-6">
+        <div className="min-h-[100dvh] bg-slate-950 text-slate-200 flex flex-col p-6">
             <header className="flex items-center mb-8">
                 <Button variant="ghost" size="icon" onClick={onBack} className="text-slate-400 mr-2">
                     <ChevronLeft className="w-6 h-6" />

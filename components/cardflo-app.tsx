@@ -13,7 +13,7 @@ import { ReviewScreen } from "@/components/review-screen";
 import { LeadsScreen } from "@/components/leads-screen";
 import { PaywallUI } from "@/components/paywall-ui";
 import { Button } from "@/components/ui/shared";
-import { Loader2, Zap, LogOut, Contact, CreditCard, Gift, ShieldCheck, ChevronDown } from "lucide-react";
+import { Loader2, Zap, LogOut, Contact, CreditCard, Gift, ShieldCheck, ChevronDown, DownloadCloud } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
 import { SubscriptionTier, getUserUsage, getUserProfile } from "@/lib/paywall-service";
@@ -37,6 +37,23 @@ export default function CardfloApp() {
     const [userRole, setUserRole] = useState<'super_admin' | 'team_admin' | 'none'>('none');
     const [teamId, setTeamId] = useState<string | null>(null);
     const [openFaq, setOpenFaq] = useState<number | null>(null);
+    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+    useEffect(() => {
+        const handleBeforeInstallPrompt = (e: any) => {
+            // Prevent the mini-infobar from appearing on mobile
+            e.preventDefault();
+            // Stash the event so it can be triggered later.
+            setDeferredPrompt(e);
+            console.log("CardfloApp: PWA Install Prompt captured and deferred.");
+        };
+
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+        return () => {
+            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        };
+    }, []);
 
     const faqItems = [
         { q: 'What is Cardflo?', a: 'Cardflo is a professional web app that helps you capture and organize business card information into structured, usable contacts — quickly and without friction.' },
@@ -311,7 +328,7 @@ export default function CardfloApp() {
 
     if (status === "EXTRACTING") {
         return (
-            <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center space-y-8 animate-in fade-in duration-500">
+            <div className="min-h-[100dvh] bg-slate-950 flex flex-col items-center justify-center p-6 text-center space-y-8 animate-in fade-in duration-500">
                 <div className="relative w-32 h-32 mx-auto">
                     <div className="absolute inset-0 border-[6px] border-emerald-500/10 rounded-full"></div>
                     <div className="absolute inset-0 border-[6px] border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
@@ -377,7 +394,7 @@ export default function CardfloApp() {
 
     if (status === "SAVING") {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950">
+            <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-slate-950">
                 <Loader2 className="w-10 h-10 text-emerald-400 animate-spin mb-4" />
                 <p className="text-white">Syncing to Database...</p>
             </div>
@@ -386,7 +403,7 @@ export default function CardfloApp() {
 
     if (status === "SUCCESS") {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950">
+            <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-slate-950">
                 <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mb-4 border border-emerald-500/20">
                     <Zap className="w-8 h-8 text-emerald-400" />
                 </div>
@@ -399,27 +416,47 @@ export default function CardfloApp() {
 
     // IDLE Dashboard
     return (
-        <div className="min-h-screen bg-slate-950 p-6 flex flex-col">
+        <div className="min-h-[100dvh] bg-slate-950 p-6 flex flex-col">
             <header className="flex justify-between items-center mb-8">
                 <div className="flex flex-col items-start gap-1">
                     <img src="/logo.png" alt="Cardflo" className="h-14 w-auto object-contain" />
                     <p className="text-slate-400 text-xs">{session?.user.email}</p>
                 </div>
-                <Button
-                    variant="ghost"
-                    className="text-slate-500 hover:text-emerald-400 flex items-center space-x-2 px-3"
-                    onClick={() => setStatus("REFERRAL")}
-                >
-                    <Gift className="w-4 h-4" />
-                    <span className="text-xs font-bold uppercase tracking-widest">Refer</span>
-                </Button>
+
+                <div className="flex items-center">
+                    {deferredPrompt && (
+                        <Button
+                            variant="default"
+                            className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 flex items-center space-x-2 px-3 mr-2 shadow-lg shadow-emerald-500/20 rounded-xl animate-in fade-in zoom-in duration-300"
+                            onClick={async () => {
+                                if (!deferredPrompt) return;
+                                deferredPrompt.prompt();
+                                const { outcome } = await deferredPrompt.userChoice;
+                                console.log(`CardfloApp: PWA Install outcome: ${outcome}`);
+                                setDeferredPrompt(null);
+                            }}
+                        >
+                            <DownloadCloud className="w-4 h-4" />
+                            <span className="text-xs font-black uppercase tracking-widest hidden sm:inline-block">Install App</span>
+                        </Button>
+                    )}
+
+                    <Button
+                        variant="ghost"
+                        className="text-slate-500 hover:text-emerald-400 flex items-center space-x-2 px-3"
+                        onClick={() => setStatus("REFERRAL")}
+                    >
+                        <Gift className="w-4 h-4" />
+                        <span className="text-xs font-bold uppercase tracking-widest">Refer</span>
+                    </Button>
+                </div>
                 <Button
                     variant="ghost"
                     className="text-slate-500 hover:text-emerald-400 flex items-center space-x-2 px-3"
                     onClick={() => setStatus("PAYWALL")}
                 >
                     <CreditCard className="w-4 h-4" />
-                    <span className="text-xs font-bold uppercase tracking-widest">Upgrade</span>
+                    <span className="text-xs font-bold uppercase tracking-widest hidden sm:inline-block">Upgrade</span>
                 </Button>
                 <Button
                     variant="ghost"
@@ -427,7 +464,7 @@ export default function CardfloApp() {
                     onClick={() => setStatus("LEADS")}
                 >
                     <Contact className="w-4 h-4" />
-                    <span className="text-xs font-bold uppercase tracking-widest">My Cards</span>
+                    <span className="text-xs font-bold uppercase tracking-widest hidden sm:inline-block">My Cards</span>
                 </Button>
                 <Button variant="ghost" size="icon" onClick={handleSignOut} className="text-slate-500 hover:text-white">
                     <LogOut className="w-5 h-5" />

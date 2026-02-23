@@ -138,7 +138,7 @@ export function PaywallUI({ currentTier, usageCount, bonusScans, userId, email, 
     }, []);
 
     return (
-        <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center">
+        <div className="min-h-[100dvh] bg-slate-950 text-white flex flex-col items-center">
             {/* Standard Header with Back Button */}
             <header className="w-full bg-slate-950/80 backdrop-blur-md sticky top-0 z-50 p-4 border-b border-slate-800">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">

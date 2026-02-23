@@ -185,7 +185,7 @@ export function LeadsScreen({ onBack }: { onBack: () => void }) {
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col">
+        <div className="min-h-[100dvh] bg-slate-950 text-slate-200 flex flex-col">
             <header className="p-4 border-b border-slate-800 flex items-center justify-between sticky top-0 bg-slate-950/80 backdrop-blur-md z-10">
                 <div className="flex items-center space-x-3">
                     <Button variant="ghost" size="icon" onClick={onBack} className="text-slate-400">
