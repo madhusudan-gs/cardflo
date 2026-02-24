@@ -1,8 +1,16 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { createClient } from '@/lib/supabase-server';
 
 export async function POST(req: Request) {
     try {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const { imageBase64 } = await req.json();
 
         if (!imageBase64) {
