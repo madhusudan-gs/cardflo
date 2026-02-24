@@ -69,14 +69,24 @@ export default function CardfloApp() {
         // Check active session
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
-            setStatus(session ? "IDLE" : "AUTHENTICATING");
+            setStatus(prev => {
+                if (prev === "AUTHENTICATING") {
+                    return session ? "IDLE" : "AUTHENTICATING";
+                }
+                return prev;
+            });
         });
 
         const {
             data: { subscription },
         } = supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session);
-            setStatus(session ? "IDLE" : "AUTHENTICATING");
+            setStatus(prev => {
+                if (!session) return "AUTHENTICATING";
+                if (prev === "AUTHENTICATING" && session) return "IDLE";
+                // Preserve the state (SCANNING, EXTRACTING, etc) if it's just a background token refresh
+                return prev;
+            });
         });
 
         return () => subscription.unsubscribe();
