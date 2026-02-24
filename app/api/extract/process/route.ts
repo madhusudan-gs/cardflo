@@ -66,7 +66,10 @@ export async function POST(req: Request) {
                         jobTitle: { type: SchemaType.STRING },
                         company: { type: SchemaType.STRING },
                         email: { type: SchemaType.STRING },
-                        phone: { type: SchemaType.STRING },
+                        phone: {
+                            type: SchemaType.STRING,
+                            description: "STRICT RULE: ONLY extract the single primary mobile number. Format MUST be exactly like +919000000000 with NO spaces, dashes, or commas. If there are multiple numbers, IGNORE the rest here."
+                        },
                         website: { type: SchemaType.STRING },
                         address: { type: SchemaType.STRING },
                         notes: { type: SchemaType.STRING },

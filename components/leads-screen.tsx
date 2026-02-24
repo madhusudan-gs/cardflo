@@ -423,13 +423,13 @@ export function LeadsScreen({ onBack }: { onBack: () => void }) {
                                             <div className="flex items-center text-xs group/item gap-2">
                                                 <div className="flex items-center text-slate-400">
                                                     <Phone className="w-3.5 h-3.5 mr-2" />
-                                                    <span>{lead.phone.replace(/['`]/g, '')}</span>
+                                                    <span>{lead.phone.split(',')[0].trim().replace(/['`]/g, '')}</span>
                                                 </div>
-                                                <button onClick={() => copyToClipboard(lead.phone?.replace(/['`]/g, '') || '')} className="text-slate-600 hover:text-emerald-400 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                                <button onClick={() => copyToClipboard(lead.phone?.split(',')[0].trim().replace(/['`]/g, '') || '')} className="text-slate-600 hover:text-emerald-400 opacity-0 group-hover/item:opacity-100 transition-opacity">
                                                     <Copy className="w-3 h-3" />
                                                 </button>
                                                 <a
-                                                    href={`https://wa.me/${lead.phone?.replace(/[^0-9]/g, '')}`}
+                                                    href={`https://wa.me/${lead.phone?.split(',')[0].replace(/[^0-9]/g, '')}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="text-emerald-500 hover:text-emerald-400 opacity-0 group-hover/item:opacity-100 transition-opacity"
@@ -437,6 +437,9 @@ export function LeadsScreen({ onBack }: { onBack: () => void }) {
                                                 >
                                                     <MessageCircle className="w-3.5 h-3.5" />
                                                 </a>
+                                                {lead.phone.includes(',') && (
+                                                    <span className="text-[9px] text-slate-600 italic ml-1" title={lead.phone}>+ more in edit view</span>
+                                                )}
                                             </div>
                                         )}
                                         {lead.website && (
