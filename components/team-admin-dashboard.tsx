@@ -248,23 +248,68 @@ export function TeamAdminDashboard({ onBack, teamId }: {
             {/* Usage Tab */}
             {view === 'usage' && (
                 <div className="space-y-6">
-                    {/* Team Summary */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center">
-                            <div className="text-2xl font-black text-white">
-                                {members.reduce((sum, m) => sum + m.scans_count, 0)}
+                    {/* Hero Usage Meter */}
+                    {(() => {
+                        const totalUsed = members.reduce((sum, m) => sum + m.scans_count, 0);
+                        const pctTotal = Math.min(100, Math.round((totalUsed / SCAN_LIMIT) * 100));
+                        const remaining = Math.max(0, SCAN_LIMIT - totalUsed);
+                        const isNearLimit = pctTotal >= 80;
+                        return (
+                            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                                <div className="flex justify-between items-end mb-4">
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Team Plan · Monthly</p>
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-5xl font-black text-white leading-none">{totalUsed}</span>
+                                            <span className="text-xl font-black text-slate-500">/ {SCAN_LIMIT}</span>
+                                        </div>
+                                        <p className="text-xs text-slate-400 mt-1">cards scanned this cycle</p>
+                                    </div>
+                                    <div className={cn(
+                                        "text-right text-sm font-black",
+                                        isNearLimit ? "text-amber-400" : "text-emerald-400"
+                                    )}>
+                                        <p>{remaining}</p>
+                                        <p className="text-[9px] font-bold uppercase tracking-widest text-slate-500">remaining</p>
+                                    </div>
+                                </div>
+
+                                {/* Progress bar */}
+                                <div className="h-3 bg-slate-800 rounded-full overflow-hidden">
+                                    <div
+                                        className={cn(
+                                            "h-full rounded-full transition-all duration-700",
+                                            pctTotal >= 90 ? "bg-red-500" :
+                                                pctTotal >= 80 ? "bg-amber-400" :
+                                                    "bg-gradient-to-r from-emerald-500 to-cyan-500"
+                                        )}
+                                        style={{ width: `${pctTotal}%` }}
+                                    />
+                                </div>
+
+                                <div className="flex justify-between mt-2">
+                                    <p className="text-[9px] text-slate-600 uppercase tracking-widest">0</p>
+                                    <p className={cn(
+                                        "text-[9px] font-bold uppercase tracking-widest",
+                                        isNearLimit ? "text-amber-400" : "text-slate-600"
+                                    )}>
+                                        {pctTotal}% used
+                                    </p>
+                                    <p className="text-[9px] text-slate-600 uppercase tracking-widest">1,000</p>
+                                </div>
+
+                                {isNearLimit && (
+                                    <p className="mt-3 text-xs text-amber-400 font-bold text-center bg-amber-500/10 border border-amber-500/20 rounded-xl py-2">
+                                        ⚠ Approaching team scan limit this cycle
+                                    </p>
+                                )}
                             </div>
-                            <div className="text-[9px] text-slate-500 uppercase tracking-widest mt-1">Total Scans</div>
-                        </div>
-                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center">
-                            <div className="text-2xl font-black text-white">{members.length}</div>
-                            <div className="text-[9px] text-slate-500 uppercase tracking-widest mt-1">Members</div>
-                        </div>
-                    </div>
+                        );
+                    })()}
 
                     {/* Per-Member Usage */}
                     <div className="space-y-3">
-                        <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Per Member Usage</h3>
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Per Member</h3>
                         {members.map(member => {
                             const pct = Math.min(100, Math.round((member.scans_count / SCAN_LIMIT) * 100));
                             return (
@@ -274,7 +319,7 @@ export function TeamAdminDashboard({ onBack, teamId }: {
                                             <p className="text-sm font-bold text-white">{member.full_name || member.email}</p>
                                             <p className="text-[10px] text-slate-500">{member.email}</p>
                                         </div>
-                                        <span className="text-sm font-black text-white">{member.scans_count}<span className="text-slate-600 text-xs font-normal">/{SCAN_LIMIT}</span></span>
+                                        <span className="text-sm font-black text-white">{member.scans_count}<span className="text-slate-600 text-xs font-normal"> cards</span></span>
                                     </div>
                                     <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
                                         <div
@@ -294,6 +339,7 @@ export function TeamAdminDashboard({ onBack, teamId }: {
                     </div>
                 </div>
             )}
+
         </div>
     );
 }
