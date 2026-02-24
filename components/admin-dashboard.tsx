@@ -32,7 +32,7 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
         recentLeads: []
     });
     const [loading, setLoading] = useState(true);
-    const [view, setView] = useState<'stats' | 'users' | 'leads' | 'coupons'>('stats');
+    const [view, setView] = useState<'stats' | 'users' | 'leads' | 'coupons' | 'support'>('stats');
     const [searchTerm, setSearchTerm] = useState("");
     const [expandedLeadId, setExpandedLeadId] = useState<string | null>(null);
 
@@ -209,6 +209,15 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
                             view === 'coupons' ? "bg-emerald-500 text-slate-950 border-emerald-500" : "text-slate-500 border-slate-800"
                         )}
                     >Coupons</button>
+                )}
+                {userRole === 'super_admin' && (
+                    <button
+                        onClick={() => setView('support')}
+                        className={cn(
+                            "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all shrink-0",
+                            view === 'support' ? "bg-blue-500 text-white border-blue-500" : "text-slate-500 border-slate-800"
+                        )}
+                    >Support Email</button>
                 )}
             </div>
 
@@ -475,6 +484,51 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
                                     </Button>
                                 </div>
                             ))}
+                        </div>
+                    </div>
+                )}
+
+                {view === 'support' && (
+                    <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-300">
+                        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-6">
+                            <div className="flex items-center gap-3">
+                                <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
+                                    <Mail className="w-5 h-5 text-blue-400" />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-black text-white uppercase tracking-widest">Support Portal</h3>
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Hostinger Titan Webmail</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4 pt-4 border-t border-slate-800/50">
+                                <div>
+                                    <label className="text-[8px] font-black uppercase text-slate-500 tracking-widest block mb-2">Login Email</label>
+                                    <div className="flex gap-2">
+                                        <div className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm font-mono text-slate-300 select-all">
+                                            support@cardflo.app
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-[8px] font-black uppercase text-slate-500 tracking-widest block mb-2">Password</label>
+                                    <div className="flex gap-2">
+                                        <div className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm font-mono text-slate-300 select-all">
+                                            {"k{$EWE_)NI\\{}JN"}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <a
+                                    href="https://hostinger.titan.email/mail/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center gap-2 w-full bg-white text-black font-black rounded-xl h-12 uppercase tracking-widest text-[10px] transition-colors hover:bg-slate-200 mt-4"
+                                >
+                                    <ExternalLink className="w-4 h-4" />
+                                    Launch Web Client
+                                </a>
+                            </div>
                         </div>
                     </div>
                 )}
