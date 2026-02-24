@@ -129,12 +129,17 @@ export async function incrementUsage(userId: string) {
     // 2. If usage exists and is in current cycle, update it
     if (usage && (!usage.cycle_end || new Date(usage.cycle_end) > new Date())) {
         const updateData = { scans_count: (usage.scans_count || 0) + 1 };
-        await supabase.from('usage')
+        const { error: updateError } = await supabase.from('usage')
             .update(updateData)
             .eq('id', usage.id);
+
+        if (updateError) {
+            console.error("CardfloApp: Critical error updating usage (Likely RLS issue):", updateError);
+            return false;
+        }
     } else {
         // 3. Create new usage record for new cycle
-        await supabase
+        const { error: insertError } = await supabase
             .from('usage')
             .insert({
                 user_id: userId,
@@ -142,7 +147,14 @@ export async function incrementUsage(userId: string) {
                 cycle_start: new Date().toISOString(),
                 cycle_end: cycleEnd
             });
+
+        if (insertError) {
+            console.error("CardfloApp: Critical error inserting new usage (Likely RLS issue):", insertError);
+            return false;
+        }
     }
+
+    return true;
 }
 
 export async function redeemCoupon(userId: string, code: string): Promise<{ success: boolean; message: string; bonus_scans?: number }> {
