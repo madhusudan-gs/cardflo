@@ -8,8 +8,6 @@ const supabaseAdmin = createClient(
     { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(req: Request) {
     try {
         const { email, teamId, inviterName } = await req.json();
@@ -62,6 +60,7 @@ export async function POST(req: Request) {
         // Send invite email regardless (existing users get a "you've been added", new users get a sign-up link)
         const signupUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://cardflo.in'}?invite_team=${teamId}&invite_email=${encodeURIComponent(email)}`;
 
+        const resend = new Resend(process.env.RESEND_API_KEY);
         await resend.emails.send({
             from: 'Cardflo Team <support@cardflo.in>',
             to: email,
