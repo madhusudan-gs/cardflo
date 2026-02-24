@@ -1,6 +1,7 @@
 import { useRef, useCallback, useState, useEffect } from "react";
 import { Button } from "@/components/ui/shared";
 import { Camera, RefreshCw, Loader2, Sparkles } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 
 // Helper function to quickly score the sharpness/focus of a video frame 
@@ -270,9 +271,15 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
                 // Try to reliably fetch the API route whether we're on localhost or Vercel
                 const apiUrl = typeof window !== 'undefined' ? '/api/extract/detect' : `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/extract/detect`;
 
+                // Fetch token from Supabase client directly
+                const { data: { session } } = await supabase.auth.getSession();
+
                 const response = await fetch(apiUrl, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session?.access_token || ''}`
+                    },
                     body: JSON.stringify({ imageBase64: base64Image })
                 });
 

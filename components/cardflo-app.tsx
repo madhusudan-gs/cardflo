@@ -172,7 +172,10 @@ export default function CardfloApp() {
                 const apiUrl = typeof window !== 'undefined' ? '/api/extract/enrich' : `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/extract/enrich`;
                 const res = await fetch(apiUrl, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session?.access_token || ''}`
+                    },
                     body: JSON.stringify({ existingData: currentCard, backImageBase64: imageBase64 })
                 });
 
@@ -200,7 +203,10 @@ export default function CardfloApp() {
             const apiUrl = typeof window !== 'undefined' ? '/api/extract/process' : `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/extract/process`;
             const res = await fetch(apiUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token || ''}`
+                },
                 body: JSON.stringify({ imageBase64 })
             });
 

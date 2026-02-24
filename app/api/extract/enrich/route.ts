@@ -8,9 +8,23 @@ DO NOT overwrite the front notes, combine them.`;
 export async function POST(req: Request) {
     try {
         const supabase = createClient();
-        const { data: { session } } = await supabase.auth.getSession();
+        let sessionValid = false;
 
-        if (!session) {
+        // First try to authenticate via the Authorization header (passed by fetch)
+        const authHeader = req.headers.get('authorization');
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            const token = authHeader.split('Bearer ')[1];
+            const { data: { user } } = await supabase.auth.getUser(token);
+            if (user) sessionValid = true;
+        }
+
+        // Fallback to cookie-based session checking
+        if (!sessionValid) {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) sessionValid = true;
+        }
+
+        if (!sessionValid) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
