@@ -92,6 +92,25 @@ export default function CardfloApp() {
         if (status === "IDLE" && session?.user.id) {
             getStats(session.user.id).then(setStats);
             getUserProfile(session.user.id).then(async profile => {
+                // Auto-recovery for missing profiles (e.g. users registered before triggers were added, or trigger failed)
+                if (!profile) {
+                    console.warn("CardfloApp: Missing profile detected. Attempting to auto-create...");
+                    const { data: newProfile, error: createError } = await supabase.from('profiles').insert({
+                        id: session.user.id,
+                        email: session.user.email,
+                        full_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '',
+                        avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || ''
+                    }).select().single();
+
+                    if (!createError && newProfile) {
+                        profile = newProfile;
+                        console.log("CardfloApp: Profile auto-created successfully.");
+                    } else {
+                        console.error("CardfloApp: Failed to auto-create profile:", createError);
+                        // If it fails, we shouldn't crash, but some features might be degraded.
+                    }
+                }
+
                 if (profile?.subscription_tier) setSubscriptionTier(profile.subscription_tier as SubscriptionTier);
                 if (profile?.referral_code) setReferralCode(profile.referral_code);
 
