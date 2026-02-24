@@ -179,7 +179,7 @@ export function AdminDashboard({ onBack, userRole = 'super_admin', teamId }: {
                 </div>
             </header>
 
-            <div className="flex gap-2 mb-6 scrollbar-hide overflow-x-auto pb-2">
+            <div className="flex gap-2 mb-6 flex-wrap pb-2">
                 <button
                     onClick={() => setView('stats')}
                     className={cn(
