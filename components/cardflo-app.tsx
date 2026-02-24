@@ -217,8 +217,8 @@ export default function CardfloApp() {
             const data = await res.json();
             console.log("CardfloApp: Extraction successful", data);
 
-            // Per User Requirement: Get matched lead for display in ReviewScreen
-            const matchedLead = await getDuplicateMatch(
+            // Run downstream operations in parallel to save 1-2 seconds of loading time!
+            const matchedLeadPromise = getDuplicateMatch(
                 data.email,
                 data.firstName,
                 data.lastName,
@@ -227,33 +227,27 @@ export default function CardfloApp() {
                 data.company
             );
 
-            const cardWithDupeStatus = {
+            const logoPromise = (data.logo_box && data.logo_box.length === 4)
+                ? cropLogoFromImage(imageBase64, data.logo_box)
+                : Promise.resolve(null);
+
+            const cardPromise = (data.card_box && data.card_box.length === 4)
+                ? cropImage(imageBase64, data.card_box)
+                : Promise.resolve(null);
+
+            const [matchedLead, croppedLogoBase64, croppedCardBase64] = await Promise.all([
+                matchedLeadPromise, logoPromise, cardPromise
+            ]);
+
+            const finalCardData = {
                 ...data,
-                isDuplicate: !!matchedLead
+                isDuplicate: !!matchedLead,
+                ...(croppedLogoBase64 && { logo_fallback_base64: croppedLogoBase64 })
             };
 
             setDuplicateMatch(matchedLead);
-
-            // Attempt to crop the logo if coordinates were found
-            let finalCardData = cardWithDupeStatus;
-            if (data.logo_box && data.logo_box.length === 4) {
-                console.log("CardfloApp: Cropping logo from scan...");
-                const croppedLogoBase64 = await cropLogoFromImage(imageBase64, data.logo_box);
-                if (croppedLogoBase64) {
-                    finalCardData = {
-                        ...finalCardData,
-                        logo_fallback_base64: croppedLogoBase64
-                    };
-                }
-            }
-
-            // Attempt to crop the entire card perfectly to its edges
-            if (data.card_box && data.card_box.length === 4) {
-                console.log("CardfloApp: Cropping edge-to-edge card...");
-                const croppedCardBase64 = await cropImage(imageBase64, data.card_box);
-                if (croppedCardBase64) {
-                    setFrontImage(croppedCardBase64);
-                }
+            if (croppedCardBase64) {
+                setFrontImage(croppedCardBase64);
             }
 
             // Save as draft immediately for persistence/confirmation step

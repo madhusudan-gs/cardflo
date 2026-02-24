@@ -184,11 +184,11 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
             const canvas = canvasRef.current;
 
             try {
-                // Burst Capture: Take 5 frames over ~750ms and pick the sharpest one!
+                // Burst Capture: Take 3 frames over ~300ms and pick the sharpest one!
                 let bestFrameBase64 = "";
                 let bestScore = -1;
-                const burstCount = 5;
-                const delayBetweenFramesMs = 150;
+                const burstCount = 3;
+                const delayBetweenFramesMs = 100;
 
                 console.log(`Scanner: Starting burst capture of ${burstCount} frames...`);
 
@@ -204,7 +204,7 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
                     const context = canvas.getContext("2d");
                     if (context) {
                         context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                        const frameBase64 = canvas.toDataURL("image/jpeg", 0.95);
+                        const frameBase64 = canvas.toDataURL("image/jpeg", 0.85);
 
                         console.log(`Scanner: Burst frame ${i + 1}/${burstCount}, sharpness score: ${score.toFixed(2)}`);
                         if (score > bestScore) {
@@ -227,7 +227,7 @@ export function ScannerScreen({ onCapture, onCancel }: ScannerScreenProps) {
                 const context = canvas.getContext("2d");
                 if (context) {
                     context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    const imageBase64 = canvas.toDataURL("image/jpeg", 0.95);
+                    const imageBase64 = canvas.toDataURL("image/jpeg", 0.85);
                     onCaptureRef.current(imageBase64);
                 }
             }
