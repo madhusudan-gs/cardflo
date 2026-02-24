@@ -83,16 +83,16 @@ export async function canScan(userId: string): Promise<{ allowed: boolean; reaso
 
         const usage = await getUserUsage(userId);
 
-        // If no usage record exists for this cycle, they are allowed (will be created on first scan)
-        if (!usage) return { allowed: true };
+        // If no usage record exists for this cycle, they have 0 scans.
+        // We do NOT return allowed: true blindly here anymore.
 
         // Check if cycle has ended (Simple client-side safety, though SQL/Backend should handle reset)
-        if (usage.cycle_end && new Date(usage.cycle_end) < new Date()) {
+        if (usage && usage.cycle_end && new Date(usage.cycle_end) < new Date()) {
             return { allowed: true }; // Cycle reset needed
         }
 
-        const totalScans = usage.scans_count || 0;
-        const bonusScans = usage.bonus_scans_remaining || 0;
+        const totalScans = usage ? (usage.scans_count || 0) : 0;
+        const bonusScans = usage ? (usage.bonus_scans_remaining || 0) : 0;
         const limitConfig = (profile as any).custom_scan_limit ?? config.scanLimit;
         const totalLimit = limitConfig + bonusScans;
 

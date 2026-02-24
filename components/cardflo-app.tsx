@@ -109,7 +109,8 @@ export default function CardfloApp() {
                         id: session.user.id,
                         email: session.user.email,
                         full_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '',
-                        avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || ''
+                        avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || '',
+                        subscription_tier: 'starter'
                     }).select().single();
 
                     if (!createError && newProfile) {
@@ -313,6 +314,7 @@ export default function CardfloApp() {
 
             // Increment paywall usage
             await incrementUsage(session.user.id);
+            await refreshUsage(session.user.id);
 
             setStatus("SUCCESS");
             // Cleanup draft
