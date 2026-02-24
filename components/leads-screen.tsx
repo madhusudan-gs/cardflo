@@ -29,11 +29,24 @@ export function LeadsScreen({ onBack }: { onBack: () => void }) {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) return;
 
-            const { data, error } = await supabase
-                .from('leads')
-                .select('*')
-                .eq('created_by', session.user.id)
-                .order('created_at', { ascending: false });
+            // Check if user belongs to a team
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('team_id')
+                .eq('id', session.user.id)
+                .single();
+
+            let query = supabase.from('leads').select('*').order('created_at', { ascending: false });
+
+            if (profile?.team_id) {
+                // Team member: show all leads from the entire team
+                query = query.eq('team_id', profile.team_id);
+            } else {
+                // Personal account: show only own leads
+                query = query.eq('created_by', session.user.id);
+            }
+
+            const { data, error } = await query;
 
             if (error) {
                 console.error("Error fetching leads:", error);

@@ -5,6 +5,7 @@ import { AppStatus, CardData } from "@/lib/types";
 import { ReferralUI } from "@/components/referral-ui";
 
 import { AdminDashboard } from "@/components/admin-dashboard";
+import { TeamAdminDashboard } from "@/components/team-admin-dashboard";
 import { saveCard, getStats, saveDraft, deleteDraft, getDuplicateMatch } from "@/lib/supabase-service";
 import { canScan, incrementUsage } from "@/lib/paywall-service";
 import { AuthScreen } from "@/components/auth-screen";
@@ -401,6 +402,9 @@ export default function CardfloApp() {
 
 
     if ((status as string) === "ADMIN") {
+        if (userRole === 'team_admin' && teamId) {
+            return <TeamAdminDashboard onBack={() => setStatus("IDLE")} teamId={teamId} />;
+        }
         return <AdminDashboard onBack={() => setStatus("IDLE")} userRole={userRole as any} teamId={teamId} />;
     }
 

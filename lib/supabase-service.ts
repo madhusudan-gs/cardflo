@@ -46,6 +46,14 @@ export async function saveCard(card: CardData, userId: string): Promise<boolean>
             throw new Error(reason === 'limit_reached' ? 'Scan limit reached. Please upgrade your plan.' : 'Unauthorized scan attempt.');
         }
 
+        // Look up team membership so leads can be shared across the team
+        const { data: profileData } = await supabase
+            .from('profiles')
+            .select('team_id')
+            .eq('id', userId)
+            .single();
+        const teamId = (profileData as any)?.team_id || null;
+
         let logoUrl: string | undefined = undefined;
 
         // Extract and upload logo if present
@@ -80,6 +88,7 @@ export async function saveCard(card: CardData, userId: string): Promise<boolean>
             .from('leads')
             .insert({
                 created_by: userId,
+                team_id: teamId,
                 first_name: card.firstName?.trim(),
                 last_name: card.lastName?.trim(),
                 job_title: card.jobTitle?.trim(),
