@@ -5,7 +5,12 @@ import { createClient } from '@/lib/supabase-server';
 const SYSTEM_INSTRUCTION = `You are a professional business card scanner. 
 Your goal is to extract contact information with 100% accuracy.
 If a field is not present, return an empty string.
-For 'notes', provide a brief semantic summary of the person/brand based on the card's design or tagline.`;
+For 'notes', provide a brief semantic summary of the person/brand based on the card's design or tagline.
+
+CRITICAL FORMATTING RULES:
+1. PHONE: ONLY extract the primary mobile phone number into the 'phone' field. If there are multiple numbers (e.g., landline, fax, office), put the extra numbers in the 'notes' field, NOT the 'phone' field.
+2. PHONE FORMAT: Always format the primary mobile number without spaces or dashes, exactly like +919000000000 so it works with WhatsApp links.
+3. NAMES: Do not include titles (Mr., Dr.) or credentials (Ph.D., B.Tech) in the firstName or lastName fields. Put credentials in the 'notes' field instead.`;
 
 export async function POST(req: Request) {
     try {
